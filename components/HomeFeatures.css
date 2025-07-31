@@ -1,0 +1,148 @@
+.features-section {
+  padding: 5rem 1rem; /* 80px 16px */
+  background-color: #0d1b2a; /* Azul marino oscuro */
+  color: #e0e1dd; /* Texto principal claro */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.features-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.features-header {
+  margin-bottom: 4rem; /* 64px */
+  padding: 0 1rem;
+}
+
+.features-header h2 {
+  font-size: 2.5rem; /* 40px */
+  font-weight: 700;
+  margin-bottom: 1rem; /* 16px */
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.features-header p {
+  font-size: 1.25rem; /* 20px */
+  color: #b1b7c2;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2.5rem; /* 40px */
+  padding: 1rem;
+}
+
+.feature-card {
+  background-color: #1b263b; /* Azul más claro para las tarjetas */
+  padding: 2.5rem 2rem; /* 40px 32px */
+  border-radius: 16px;
+  border: 1px solid #2a3b52; /* Borde sutil */
+  text-align: left;
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  border-color: #3a86ff; /* Borde de acento al pasar el mouse */
+  background-color: #2a3b52; /* Fondo ligeramente más claro al pasar el mouse */
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Arial', sans-serif;
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  background-clip: initial;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  box-shadow: none;
+  color: inherit;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1);
+}
+
+.feature-card h3 {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 600;
+  margin-bottom: 1rem; /* 16px */
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  text-align: center;
+}
+
+.feature-card p {
+  font-size: 1.1rem; /* 17.6px */
+  color: #b1b7c2;
+  line-height: 1.7;
+  margin: 0;
+  flex-grow: 1;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .features-section {
+    padding: 3rem 1rem;
+  }
+  
+  .features-header h2 {
+    font-size: 2rem; /* 32px */
+  }
+  
+  .features-header p {
+    font-size: 1.1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .feature-card {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Animación sutil para los elementos */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-card {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Aplicar retrasos escalonados a las tarjetas */
+.feature-card:nth-child(1) { animation-delay: 0.1s; }
+.feature-card:nth-child(2) { animation-delay: 0.2s; }
+.feature-card:nth-child(3) { animation-delay: 0.3s; }

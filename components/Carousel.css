@@ -1,0 +1,65 @@
+.carousel-container {
+  width: 100%;
+  height: 500px; /* Ajusta la altura según tus necesidades */
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.carousel-slide {
+  position: relative;
+  width: 100%;
+  height: 500px; /* Debe coincidir con la altura del contenedor */
+}
+
+.carousel-slide::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 50%);
+  z-index: 1;
+}
+
+.carousel-caption {
+  position: absolute;
+  bottom: 40px;
+  left: 40px;
+  z-index: 2;
+  color: white;
+  max-width: 60%;
+}
+
+.carousel-caption h2 {
+  font-size: 2.5rem; /* 40px */
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.carousel-caption p {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 400;
+  margin: 0;
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* Estilos para los puntos de navegación (dots) */
+.slick-dots {
+  bottom: 20px; /* Ajusta la posición vertical de los puntos */
+}
+
+.slick-dots li button:before {
+  font-size: 12px; /* Tamaño de los puntos */
+  color: white;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.slick-dots li.slick-active button:before {
+  color: var(--accent, #3a86ff);
+  opacity: 1;
+}

@@ -1,0 +1,320 @@
+:root {
+  --primary: #000000;
+  --secondary: #ffffff;
+  --accent: #3a86ff;
+  --text-color: #E0E1DD; /* Mantenemos un texto claro para el tema oscuro */
+  --light-gray: #f8f9fa;
+  --hero-image: url('/images/imagen1.png.jfif');
+}
+
+.panel-empleado-bg {
+  position: relative;
+  min-height: 100vh;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.panel-empleado-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.panel-empleado-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 56rem; /* 896px */
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem; /* 16px */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  color: var(--text-color);
+  overflow: hidden;
+}
+
+.panel-empleado-header {
+  background-color: rgba(0, 0, 0, 0.4); /* primary/40 */
+  padding: 1.5rem; /* 24px */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-empleado-header h2 {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 700;
+  margin: 0;
+}
+
+.panel-empleado-user {
+  font-size: 0.875rem; /* 14px */
+  opacity: 0.8;
+  margin-top: 0.25rem; /* 4px */
+}
+
+.panel-empleado-fecha-hora {
+  text-align: right;
+}
+
+.panel-empleado-hora {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.panel-empleado-fecha {
+  font-size: 0.75rem; /* 12px */
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.panel-empleado-main {
+  padding: 2rem; /* 32px */
+}
+
+.panel-empleado-main h3 {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  margin: 0;
+}
+
+.panel-empleado-main p {
+  opacity: 0.8;
+  margin-bottom: 1.5rem; /* 24px */
+}
+
+.registro-horarios-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* 24px */
+}
+
+.registro-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.5rem; /* 24px */
+}
+
+@media (min-width: 768px) {
+  .registro-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.registro-card {
+  background-color: rgba(0, 0, 0, 0.3); /* primary/30 */
+  padding: 1rem; /* 16px */
+  border-radius: 0.75rem; /* 12px */
+  border: 1px solid #162e55;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* 12px */
+}
+
+.registro-label {
+  font-weight: 600;
+  font-size: 1rem; /* 16px */
+  opacity: 0.9;
+}
+
+.registro-emoji {
+  font-weight: bold;
+}
+
+.registro-input {
+  background-color: rgba(0, 0, 0, 0.4); /* primary/40 */
+  text-align: center;
+  font-size: 1.125rem; /* 18px */
+  font-family: monospace;
+  border-radius: 0.375rem; /* 6px */
+  padding: 0.5rem; /* 8px */
+  width: 100%;
+  cursor: not-allowed;
+  border: none;
+  color: var(--text-color);
+}
+
+.registro-btn {
+  background-color: #0c192e; /* secondary/10 */
+  color: var(--text-color);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem; /* 6px */
+  transition: all 0.2s ease-in-out;
+  border: none;
+  cursor: pointer;
+}
+
+.registro-btn:hover {
+  background-color: #536683; /* secondary/20 */
+}
+
+.registro-btn:disabled {
+  background-color: #0c192e; /* light-gray/20 */
+  cursor: not-allowed;
+}
+
+.guardar-registro-btn {
+  width: 100%;
+  background-color: var(--accent);
+  color: var(--text-color);
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem; /* 8px */
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: none;
+  cursor: pointer;
+}
+
+.guardar-registro-btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px #0c192e;
+}
+
+.guardar-registro-btn:disabled {
+  background-color:#0c192e; /* light-gray/50 */
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.message {
+  width: 100%;
+  padding: 0.75rem; /* 12px */
+  border-radius: 0.5rem; /* 8px */
+  text-align: center;
+  font-weight: 600;
+}
+
+.message.error {
+  background-color: rgba(239, 68, 68, 0.3); /* red-500/30 */
+  color: #F87171; /* red-400 */
+}
+
+.message.success {
+  background-color: rgba(16, 185, 129, 0.3); /* green-500/30 */
+  color: #6EE7B7; /* green-300 */
+}
+
+.modal-jornada-completada {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.modal-jornada-content {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+  padding: 2rem; /* 32px */
+  border-radius: 1rem; /* 16px */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 24rem; /* 384px */
+  margin: 1rem;
+}
+
+.modal-jornada-content h2 {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 700;
+  margin-bottom: 1rem; /* 16px */
+}
+
+/* Estilos para el grupo de botones */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+
+/* Estilos para el botón de guardar registro */
+.guardar-registro-btn {
+  background-color: #3a86ff;
+  color: white;
+  font-weight: 700;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 1rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guardar-registro-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.guardar-registro-btn:not(:disabled):hover {
+  background-color: #2563eb;
+}
+
+/* Estilos para el botón de cerrar sesión */
+.cerrar-sesion-btn {
+  background-color: #DC2626; /* red-600 */
+  color: white;
+  font-weight: 700;
+  padding: 0 1.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  transition: all 0.3s ease-in-out;
+  border: none;
+  cursor: pointer;
+}
+
+.cerrar-sesion-btn:hover {
+  background-color: #B91C1C; /* red-700 */
+}
+
+/* --- Icon Animations --- */
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.registro-emoji {
+  font-weight: bold;
+  display: inline-block; /* Required for transforms */
+  transition: transform 0.3s ease;
+}
+
+.emoji-entrada {
+  animation: pulse 2.5s infinite ease-in-out;
+}
+
+.emoji-pausa {
+  animation: blink 2s infinite step-end;
+}
+
+.registro-card:hover .emoji-salida {
+  transform: scale(1.25);
+}
+
