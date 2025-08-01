@@ -56,7 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener IP del cliente
-    const clientIP = getClientIP(request)
+    let clientIP = getClientIP(request)
+    // Si la IP es ::1 (localhost IPv6), usar 127.0.0.1
+    if (clientIP === '::1') {
+      clientIP = '127.0.0.1'
+    }
 
     // Depuración: mostrar IP detectada y la IP de la sede
     console.log("IP detectada:", clientIP, "IP sede:", empleado[0].sede_ip);
@@ -70,10 +74,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `La IP de la sede no es correcta. IP detectada: ${clientIP}` }, { status: 403 })
     }
 
-    // Guardar la IP en el empleado si está vacía
-    if (!empleado[0].Direccion_ip) {
-      await sql`UPDATE empleado SET Direccion_ip = ${clientIP} WHERE Id_empleado_PK = ${empleado[0].Id_empleado_PK}`
-    }
+    // Actualizar siempre la IP del empleado al iniciar sesión
+    await sql`UPDATE empleado SET Direccion_ip = ${clientIP} WHERE Id_empleado_PK = ${empleado[0].Id_empleado_PK}`
 
     // Login exitoso de empleado
     const userData = {
