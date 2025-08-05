@@ -3,6 +3,8 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 
+//VERSION 1 FINALIZADA
+
 export const metadata: Metadata = {
   title: 'Gestión de Turnos',
   description: 'Buscamos mejorar la experiencia de los usuarios con una gestión de turnos eficiente y precisa.',
