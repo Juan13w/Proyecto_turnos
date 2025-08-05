@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/database"
 import { getClientIP } from "@/app/api/ip-validation/route"
+import { headers } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, sedeId, password } = await request.json()
+    const { email, password } = await request.json()
 
     if (!email) {
       return NextResponse.json({ error: "Email requerido" }, { status: 400 })
@@ -16,12 +17,10 @@ export async function POST(request: NextRequest) {
     `
 
     if (admin.length > 0) {
-      // Es administrador, solo exige contraseña
+      // Es administrador, exige contraseña
       if (!password) {
         return NextResponse.json({ error: "Contraseña requerida para administradores" }, { status: 400 })
       }
-      // Log para depuración de contraseña
-      console.log("DB:", admin[0].Clave, "FRONT:", password);
       // Validar contraseña (debe estar hasheada en producción)
       if (admin[0].Clave !== password) {
         return NextResponse.json({ error: "Contraseña de administrador incorrecta" }, { status: 401 })
@@ -30,70 +29,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         user: {
-          id: admin[0].Id_admin_PK,
+          id: admin[0].admin_id,
           email: admin[0].Correo,
           isAdmin: true,
         }
       })
     }
 
-    // Si no es admin, debe ser empleado: exige sede
-    if (!sedeId) {
-      return NextResponse.json({ error: "Sede requerida para empleados" }, { status: 400 })
-    }
-
-    // Verificar si el empleado existe
+    // Si no es admin, buscar empleado con su turno
     const empleado = await sql`
-      SELECT e.*, s.Nombre as sede_nombre, s.Direccion_IP as sede_ip, t.*
+      SELECT e.*, t.* 
       FROM empleado e
-      JOIN sede s ON e.Sede_id = s.Id_sede_PK
       LEFT JOIN turno t ON e.Turno_id = t.Turno_id
-      WHERE e.Correo_emp = ${email} AND e.Sede_id = ${sedeId}
-    `
+      WHERE e.Correo_emp = ${email}`
 
     if (empleado.length === 0) {
-      return NextResponse.json({ error: "Empleado no encontrado o sede incorrecta" }, { status: 401 })
+      return NextResponse.json({ error: "Empleado no encontrado" }, { status: 401 })
     }
 
-    // Obtener IP del cliente
-    let clientIP = getClientIP(request)
-    // Si la IP es ::1 (localhost IPv6), usar 127.0.0.1
-    if (clientIP === '::1') {
-      clientIP = '127.0.0.1'
+    // Obtener información del dispositivo desde el User-Agent
+    const userAgent = request.headers.get('user-agent') || 'Dispositivo desconocido';
+    const ipAddress = await getClientIP(request);
+
+    // Actualizar o insertar en info_sesion
+    try {
+      await sql`
+        INSERT INTO info_sesion (empleado_id, dispositivo, direccion_ip, ubicacion)
+        VALUES (${empleado[0].empleado_id}, ${userAgent}, ${ipAddress}, 0)
+        ON DUPLICATE KEY UPDATE 
+          dispositivo = VALUES(dispositivo),
+          direccion_ip = VALUES(direccion_ip)
+      `;
+    } catch (error) {
+      console.error('Error al actualizar info_sesion:', error);
+      // Continuar con el login a pesar del error en el registro de sesión
     }
-
-    // Depuración: mostrar IP detectada y la IP de la sede
-    console.log("IP detectada:", clientIP, "IP sede:", empleado[0].sede_ip);
-
-    // Validar si la IP coincide con la de la sede
-    const sedeIP = empleado[0].sede_ip?.replace(/^::ffff:/, '')
-    const normalizedClientIP = clientIP.replace(/^::ffff:/, '')
-    // Permitir acceso en desarrollo si la IP es localhost
-    const isLocalhost = ["::1", "127.0.0.1", "localhost"].includes(normalizedClientIP);
-    if (sedeIP !== normalizedClientIP && !(process.env.NODE_ENV === 'development' && isLocalhost)) {
-      return NextResponse.json({ error: `La IP de la sede no es correcta. IP detectada: ${clientIP}` }, { status: 403 })
-    }
-
-    // Actualizar siempre la IP del empleado al iniciar sesión
-    await sql`UPDATE empleado SET Direccion_ip = ${clientIP} WHERE Id_empleado_PK = ${empleado[0].Id_empleado_PK}`
 
     // Login exitoso de empleado
     const userData = {
-      id: empleado[0].Id_empleado_PK,
+      id: empleado[0].empleado_id,
       email: empleado[0].Correo_emp,
-      sede: {
-        id: empleado[0].Sede_id,
-        nombre: empleado[0].sede_nombre,
-      },
-      turno: typeof empleado[0].Turno_id !== "undefined" && empleado[0].Turno_id !== null
-        ? {
-            id: Number(empleado[0].Turno_id),
-            hora_entrada: empleado[0].Hora_Entrada ?? null,
-            hora_salida: empleado[0].Hora_Salida ?? null,
-            // Agrega aquí más campos si los necesitas
-          }
-        : null,
       isAdmin: false,
+      turno: empleado[0].Turno_id ? {
+        id: empleado[0].Turno_id,
+        hora_entrada: empleado[0].Hora_entrada || null,
+        hora_salida: empleado[0].Hora_salida || null
+      } : null
     }
 
     console.log("DEBUG userData enviado:", userData);

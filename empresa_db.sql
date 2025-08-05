@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 25-07-2025 a las 18:27:22
+-- Tiempo de generación: 05-08-2025 a las 19:00:46
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -28,7 +28,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `administrador` (
-  `Id_admin_PK` int(11) NOT NULL,
+  `admin_id` int(11) NOT NULL,
   `Correo` varchar(255) NOT NULL,
   `Clave` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -37,7 +37,7 @@ CREATE TABLE `administrador` (
 -- Volcado de datos para la tabla `administrador`
 --
 
-INSERT INTO `administrador` (`Id_admin_PK`, `Correo`, `Clave`) VALUES
+INSERT INTO `administrador` (`admin_id`, `Correo`, `Clave`) VALUES
 (3, 'admin12@gmail.com', 'admin1234');
 
 -- --------------------------------------------------------
@@ -47,23 +47,21 @@ INSERT INTO `administrador` (`Id_admin_PK`, `Correo`, `Clave`) VALUES
 --
 
 CREATE TABLE `empleado` (
-  `Id_empleado_PK` int(11) NOT NULL,
+  `empleado_id` int(11) NOT NULL,
   `Correo_emp` varchar(255) NOT NULL,
-  `Direccion_ip` varchar(255) NOT NULL,
-  `Turno_id` int(11) DEFAULT NULL,
-  `Sede_id` int(11) DEFAULT NULL
+  `Turno_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `empleado`
 --
 
-INSERT INTO `empleado` (`Id_empleado_PK`, `Correo_emp`, `Direccion_ip`, `Turno_id`, `Sede_id`) VALUES
-(2, 'empleado1@empresa.com', '::1', 3, 1),
-(3, 'empleado2@empresa.com', '192.168.2.102', 5, 2),
-(6, 'operador@empresa.com', '192.168.4.102', 4, 4),
-(7, 'empleado23@empresa.com', '::1', 1, 1),
-(8, 'luis@empresa.com', '::1', 2, 2);
+INSERT INTO `empleado` (`empleado_id`, `Correo_emp`, `Turno_id`) VALUES
+(1, 'luis@empresa.com', 1),
+(2, 'empleado23@empresa.com', 2),
+(3, 'empleado2@empresa.com', 3),
+(4, 'operador@empresa.com', 4),
+(5, 'empleado1@empresa.com', 5);
 
 -- --------------------------------------------------------
 
@@ -96,27 +94,15 @@ INSERT INTO `historial_turnos` (`id`, `empleado_email`, `fecha`, `hora_entrada`,
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `sede`
+-- Estructura de tabla para la tabla `info_sesion`
 --
 
-CREATE TABLE `sede` (
-  `Id_sede_PK` int(11) NOT NULL,
-  `Nombre` varchar(255) NOT NULL,
-  `Direccion_IP` varchar(255) NOT NULL,
-  `Turno_id` int(11) DEFAULT NULL,
-  `Admin_id` int(11) DEFAULT NULL
+CREATE TABLE `info_sesion` (
+  `empleado_id` int(11) NOT NULL,
+  `dispositivo` varchar(50) NOT NULL,
+  `direccion_ip` text NOT NULL,
+  `ubicacion` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `sede`
---
-
-INSERT INTO `sede` (`Id_sede_PK`, `Nombre`, `Direccion_IP`, `Turno_id`, `Admin_id`) VALUES
-(1, 'Sede Central', '192.168.109.115', 1, NULL),
-(2, 'Sede Norte', '192.168.2.100', 1, NULL),
-(3, 'Sede Sur', '192.168.3.100', 2, 3),
-(4, 'Sede Este', '192.168.4.100', 2, NULL),
-(5, 'Sede Oeste', '192.168.5.100', 3, NULL);
 
 -- --------------------------------------------------------
 
@@ -155,16 +141,15 @@ INSERT INTO `turno` (`Turno_id`, `Hora_Entrada`, `Hora_Salida_break`, `Hora_Entr
 -- Indices de la tabla `administrador`
 --
 ALTER TABLE `administrador`
-  ADD PRIMARY KEY (`Id_admin_PK`);
+  ADD PRIMARY KEY (`admin_id`);
 
 --
 -- Indices de la tabla `empleado`
 --
 ALTER TABLE `empleado`
-  ADD PRIMARY KEY (`Id_empleado_PK`),
+  ADD PRIMARY KEY (`empleado_id`),
   ADD UNIQUE KEY `Correo_emp` (`Correo_emp`),
-  ADD KEY `Turno_id` (`Turno_id`),
-  ADD KEY `Sede_id` (`Sede_id`);
+  ADD KEY `Turno_id` (`Turno_id`);
 
 --
 -- Indices de la tabla `historial_turnos`
@@ -173,12 +158,10 @@ ALTER TABLE `historial_turnos`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `sede`
+-- Indices de la tabla `info_sesion`
 --
-ALTER TABLE `sede`
-  ADD PRIMARY KEY (`Id_sede_PK`),
-  ADD UNIQUE KEY `Admin_id` (`Admin_id`),
-  ADD KEY `Turno_id` (`Turno_id`);
+ALTER TABLE `info_sesion`
+  ADD UNIQUE KEY `empleado_id` (`empleado_id`);
 
 --
 -- Indices de la tabla `turno`
@@ -194,25 +177,19 @@ ALTER TABLE `turno`
 -- AUTO_INCREMENT de la tabla `administrador`
 --
 ALTER TABLE `administrador`
-  MODIFY `Id_admin_PK` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `empleado`
 --
 ALTER TABLE `empleado`
-  MODIFY `Id_empleado_PK` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `empleado_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `historial_turnos`
 --
 ALTER TABLE `historial_turnos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT de la tabla `sede`
---
-ALTER TABLE `sede`
-  MODIFY `Id_sede_PK` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `turno`
@@ -228,15 +205,13 @@ ALTER TABLE `turno`
 -- Filtros para la tabla `empleado`
 --
 ALTER TABLE `empleado`
-  ADD CONSTRAINT `empleado_ibfk_1` FOREIGN KEY (`Turno_id`) REFERENCES `turno` (`Turno_id`),
-  ADD CONSTRAINT `empleado_ibfk_2` FOREIGN KEY (`Sede_id`) REFERENCES `sede` (`Id_sede_PK`);
+  ADD CONSTRAINT `empleado_ibfk_1` FOREIGN KEY (`Turno_id`) REFERENCES `turno` (`Turno_id`);
 
 --
--- Filtros para la tabla `sede`
+-- Filtros para la tabla `info_sesion`
 --
-ALTER TABLE `sede`
-  ADD CONSTRAINT `sede_ibfk_1` FOREIGN KEY (`Turno_id`) REFERENCES `turno` (`Turno_id`),
-  ADD CONSTRAINT `sede_ibfk_2` FOREIGN KEY (`Admin_id`) REFERENCES `administrador` (`Id_admin_PK`);
+ALTER TABLE `info_sesion`
+  ADD CONSTRAINT `info_sesion_ibfk_1` FOREIGN KEY (`empleado_id`) REFERENCES `empleado` (`empleado_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -20,6 +20,15 @@ const Carousel = () => {
     fade: true,
     cssEase: 'linear',
     arrows: false,
+    // Mejoras de accesibilidad
+    accessibility: true,
+    focusOnSelect: false,
+    // Evita que los slides ocultos sean enfocables
+    focusOnChange: false,
+    // Asegura que solo el slide activo sea accesible
+    lazyLoad: 'ondemand' as const, // Tipo correcto para lazyLoad
+    // Desactiva el tabindex en los slides no activos
+    useCSS: true,
   };
 
   const images = [

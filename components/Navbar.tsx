@@ -7,14 +7,10 @@ import "./Navbar.css"
 interface UserInfo {
   id: number
   email: string
-  sede: {
+  turno?: {
     id: number
-    nombre: string
-  }
-  turno: {
-    id: number
-    hora_entrada: string
-    hora_salida: string
+    hora_entrada?: string
+    hora_salida?: string
   } | null
   isAdmin: boolean
 }
@@ -50,7 +46,7 @@ const Navbar = () => {
     if (userData.isAdmin) {
       console.log(`Usuario ${userData.email} iniciando sesión como Administrador`)
     } else {
-      console.log(`Usuario ${userData.email} iniciando sesión en ${userData.sede.nombre}`)
+      console.log(`Usuario ${userData.email} iniciando sesión`)
     }
   }
 
@@ -83,7 +79,7 @@ const Navbar = () => {
                 <span className="user-greeting">
                   {userInfo?.isAdmin
                     ? `${userInfo.email} (Admin)`
-                    : userInfo?.sede.nombre}
+                    : userInfo?.email}
                 </span>
                 <button className="navbar-button logout-btn" onClick={handleLogout}>
                   Cerrar sesión

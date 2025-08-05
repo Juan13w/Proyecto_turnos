@@ -10,142 +10,201 @@ interface LoginFormProps {
   onLogin: (userData: any) => void
 }
 
-interface Sede {
-  Id_sede_PK: number
-  Nombre: string
-  Direccion_IP: string
-}
-
 const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
   const [email, setEmail] = useState("")
-  const [sedeId, setSedeId] = useState("")
-  const [sedes, setSedes] = useState<Sede[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [tipoUsuario, setTipoUsuario] = useState<"empleado" | "administrador" | "ninguno" | "">("")
   const [password, setPassword] = useState("")
 
-  // Cargar sedes al abrir el formulario
+  // Resetear el formulario al abrir
   useEffect(() => {
     if (isOpen) {
-      fetchSedes()
       setTipoUsuario("")
       setPassword("")
+      setError("")
     }
   }, [isOpen])
 
-  const fetchSedes = async () => {
-    try {
-      const response = await fetch("/api/sedes")
-      const data = await response.json()
-
-      if (data.success) {
-        setSedes(data.sedes)
-      } else {
-        setError("Error cargando las sedes")
-      }
-    } catch (error) {
-      console.error("Error:", error)
-      setError("Error de conexión")
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || (tipoUsuario !== "administrador" && !sedeId)) return;
+    e.preventDefault();
+    
+    // Validación básica
+    if (!email) {
+      setError("Por favor ingresa tu correo electrónico");
+      return;
+    }
+    
     if (tipoUsuario === "administrador" && !password) {
-      setError("Por favor ingresa la contraseña de administrador")
-      return
+      setError("Por favor ingresa la contraseña de administrador");
+      return;
     }
 
-    setLoading(true)
-    setError("")
+    // Si el tipo de usuario no está definido, intentamos identificarlo
+    if (!tipoUsuario) {
+      try {
+        await handleEmailCheck(email);
+        if (!tipoUsuario) {
+          setError("No se pudo identificar el tipo de usuario. Por favor, verifica tu correo.");
+          return;
+        }
+      } catch (err) {
+        console.error("Error al verificar el correo:", err);
+        setError("Error al verificar el correo. Por favor, inténtalo de nuevo.");
+        return;
+      }
+    }
+
+    setLoading(true);
+    setError("");
 
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          ...(tipoUsuario !== "administrador" && { sedeId: Number.parseInt(sedeId) }),
           ...(tipoUsuario === "administrador" && { password })
-        }),
-      })
+        })
+      });
 
-      const data = await response.json()
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error en el inicio de sesión");
+      }
 
-      if (data.success) {
-        // Guardar datos de sesión de empleado en localStorage
-        if (!data.user.isAdmin) {
-          localStorage.setItem("empleadoLogueado", "true");
-          localStorage.setItem("empleadoData", JSON.stringify(data.user));
-          window.location.reload();
-        } else {
-          localStorage.setItem("adminLogueado", "true");
-          localStorage.setItem("adminData", JSON.stringify({
-            email: data.user.email
-          }));
-          window.location.reload();
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+
+      if (data.success && data.user) {
+        try {
+          // Limpiar el formulario
+          setEmail("");
+          setPassword("");
+          setTipoUsuario("");
+          setError("");
+          
+          // Guardar datos de sesión
+          if (!data.user.isAdmin) {
+            console.log('Guardando datos de empleado en localStorage');
+            localStorage.setItem("empleadoLogueado", "true");
+            localStorage.setItem("empleadoData", JSON.stringify(data.user));
+            
+            // Notificar al componente padre
+            onLogin(data.user);
+            
+            // Forzar recarga de la página para actualizar el estado de autenticación
+            console.log('Recargando la página para actualizar el estado de autenticación');
+            window.location.reload();
+            return;
+          } else {
+            console.log('Guardando datos de administrador en localStorage');
+            localStorage.setItem("adminLogueado", "true");
+            localStorage.setItem("adminData", JSON.stringify({ email: data.user.email }));
+            
+            // Notificar al componente padre
+            onLogin(data.user);
+            
+            // Forzar recarga de la página para actualizar el estado de autenticación
+            console.log('Recargando la página para actualizar el estado de autenticación');
+            window.location.reload();
+            return;
+          }
+        } catch (error) {
+          console.error('Error al procesar la respuesta de login:', error);
+          setError('Error al procesar la respuesta del servidor');
         }
-        setEmail("")
-        setSedeId("")
-        setPassword("")
-        setTipoUsuario("")
-        setError("")
-      } else {
-        setError(data.error || "Error en el inicio de sesión")
       }
     } catch (error) {
-      console.error("Error:", error)
-      setError("Error de conexión")
+      console.error("Error en el inicio de sesión:", error);
+      setError(error instanceof Error ? error.message : "Error en el inicio de sesión");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   // Identificar tipo de usuario al salir del campo email o al cambiarlo
-  let debounceTimer: NodeJS.Timeout;
-  const handleEmailCheck = async (correo: string) => {
+  let debounceTimer: NodeJS.Timeout | null = null;
+  
+  const handleEmailCheck = async (correo: string): Promise<boolean> => {
+    console.log('handleEmailCheck llamado con correo:', correo);
+    
     if (!correo) {
+      console.log('Correo vacío, limpiando estado');
       setTipoUsuario("");
       setPassword("");
-      return;
+      return false;
     }
+    
     try {
+      console.log('Realizando petición a /api/auth/identifica-usuario');
       const response = await fetch("/api/auth/identifica-usuario", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Debug": "true"
+        },
         body: JSON.stringify({ email: correo })
-      })
-      const data = await response.json()
-      console.log("data.tipo recibido:", data.tipo)
-      setTipoUsuario(data.tipo)
-      if (data.tipo === "ninguno") {
-        setError("El correo no está registrado como empleado ni como administrador")
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error en la respuesta del servidor: ${response.status} ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.tipo) {
+        setTipoUsuario(data.tipo);
+        
+        if (data.tipo === "ninguno") {
+          setError("El correo no está registrado como empleado ni como administrador");
+          return false;
+        } else {
+          setError("");
+          // Si es administrador, mostramos el campo de contraseña
+          if (data.tipo === "administrador") {
+            setPassword("");
+          }
+          return true;
+        }
       } else {
-        setError("")
+        throw new Error("Formato de respuesta inesperado");
       }
     } catch (error) {
-      setTipoUsuario("")
-      setError("No se pudo identificar el tipo de usuario")
+      console.error("Error al identificar usuario:", error);
+      setTipoUsuario("");
+      setError("No se pudo verificar el correo. Por favor, inténtalo de nuevo.");
+      return false;
     }
   }
 
   // Debounce para onChange
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value)
-    clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      handleEmailCheck(e.target.value)
-    }, 400)
-  }
+    const value = e.target.value.trim();
+    setEmail(value);
+    
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    
+    // Solo hacemos la verificación si hay un correo
+    if (value) {
+      debounceTimer = setTimeout(() => {
+        handleEmailCheck(value);
+      }, 400);
+    } else {
+      setTipoUsuario("");
+      setError("");
+    }
+  };
 
   // onBlur también dispara la verificación inmediata
   const handleEmailBlur = () => {
-    handleEmailCheck(email)
-  }
+    if (email) {
+      handleEmailCheck(email);
+    }
+  };
 
   if (!isOpen) return null
 
@@ -176,19 +235,7 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
             />
           </div>
 
-          {(tipoUsuario as string) !== "administrador" && (
-            <div className="form-group">
-              <label htmlFor="sede">Seleccionar Sede</label>
-              <select id="sede" value={sedeId} onChange={(e) => setSedeId(e.target.value)} required={(tipoUsuario as string) !== "administrador"} disabled={loading}>
-                <option value="">-- Selecciona una sede --</option>
-                {sedes.map((sede) => (
-                  <option key={sede.Id_sede_PK} value={sede.Id_sede_PK}>
-                    {sede.Nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+
 
           {tipoUsuario && (
             <div style={{marginBottom: 10, color: '#64748b', fontSize: 13}}>
@@ -222,9 +269,7 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
             </button>
             <button type="submit" className="submit-btn" disabled={
               loading ||
-              !email ||
-              (tipoUsuario !== "administrador" && !sedeId) ||
-              (tipoUsuario === "administrador" && !password)
+              !email || (tipoUsuario === "administrador" && !password)
             }>
               {loading
                 ? "Iniciando..."

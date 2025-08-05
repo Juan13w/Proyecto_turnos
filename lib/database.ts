@@ -52,11 +52,9 @@ export interface Sede {
 }
 
 export interface Empleado {
-  Id_empleado_PK: number
+  empleado_id: number
   Correo_emp: string
-  Direccion_ip: string
   Turno_id: number
-  Sede_id: number
 }
 
 export interface RegistroHorario {
@@ -68,6 +66,7 @@ export interface RegistroHorario {
 }
 
 export interface Administrador {
-  Id_admin_PK: number
+  admin_id: number
   Correo: string
+  Clave: string
 }
