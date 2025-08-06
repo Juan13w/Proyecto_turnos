@@ -16,6 +16,117 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
   const [error, setError] = useState("")
   const [tipoUsuario, setTipoUsuario] = useState<"empleado" | "administrador" | "ninguno" | "">("")
   const [password, setPassword] = useState("")
+  const [localIP, setLocalIP] = useState<string>("")
+  const [deviceInfo, setDeviceInfo] = useState<{
+    dispositivo: string
+    userAgent: string
+    platform: string
+  }>({ dispositivo: 'Computador', userAgent: '', platform: '' })
+  
+  const [location, setLocation] = useState<{
+    latitude: number | null
+    longitude: number | null
+    error: string | null
+  }>({ latitude: null, longitude: null, error: null })
+
+  // Obtener la ubicación del usuario
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocation(prev => ({ ...prev, error: 'La geolocalización no es soportada por tu navegador' }));
+      return;
+    }
+
+    const success = (position: GeolocationPosition) => {
+      setLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        error: null
+      });
+    };
+
+    const error = (err: GeolocationPositionError) => {
+      console.error('Error al obtener la ubicación:', err);
+      setLocation(prev => ({
+        ...prev,
+        error: `No se pudo obtener la ubicación: ${err.message}`
+      }));
+    };
+
+    navigator.geolocation.getCurrentPosition(success, error, {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 0
+    });
+  }, []);
+
+  // Detectar información básica del dispositivo al cargar el componente
+  useEffect(() => {
+    const detectDeviceInfo = () => {
+      const userAgent = navigator.userAgent;
+      // Usamos simplemente 'Computador' para todos los dispositivos no móviles/tablets
+      let deviceType = 'Computador';
+      const isMobile = /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(userAgent);
+      const isTablet = /iPad|Android(?!.*Mobile)|Tablet|Silk/i.test(userAgent);
+
+      if (isMobile) {
+        deviceType = 'Móvil';
+      } else if (isTablet) {
+        deviceType = 'Tablet';
+      }
+
+      // Detectar sistema operativo
+      let os = 'Sistema';
+      if (userAgent.includes('Windows')) os = 'Windows';
+      else if (userAgent.includes('Mac OS')) os = 'macOS';
+      else if (userAgent.includes('Linux')) os = 'Linux';
+      else if (userAgent.includes('Android')) os = 'Android';
+      else if (userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('iPod')) os = 'iOS';
+
+      // Detectar navegador
+      let browser = 'Navegador';
+      if (userAgent.includes('Firefox/')) browser = 'Firefox';
+      else if (userAgent.includes('Edg/')) browser = 'Edge';
+      else if (userAgent.includes('OPR/') || userAgent.includes('Opera/')) browser = 'Opera';
+      else if (userAgent.includes('Chrome/')) browser = 'Chrome';
+      else if (userAgent.includes('Safari/')) browser = 'Safari';
+
+      setDeviceInfo({
+        dispositivo: `${os} ${deviceType} ${browser}`.substring(0, 50),
+        userAgent: userAgent,
+        platform: navigator.platform
+      });
+    };
+
+    // Obtener IP local
+    const getLocalIP = async () => {
+      try {
+        // Usamos WebRTC para obtener la IP local
+        const peerConnection = new RTCPeerConnection({
+          iceServers: []
+        });
+        
+        peerConnection.createDataChannel('');
+        
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
+            const ipMatch = event.candidate.candidate.match(ipRegex);
+            if (ipMatch) {
+              setLocalIP(ipMatch[1]);
+            }
+          }
+        };
+      } catch (err) {
+        console.error('Error al obtener IP local:', err);
+      }
+    };
+    
+    detectDeviceInfo();
+    getLocalIP();
+  }, [])
 
   // Resetear el formulario al abrir
   useEffect(() => {
@@ -23,6 +134,27 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
       setTipoUsuario("")
       setPassword("")
       setError("")
+      
+      // Intentar obtener la ubicación nuevamente cuando se abre el formulario
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              error: null
+            });
+          },
+          (err) => {
+            console.error('Error al actualizar la ubicación:', err);
+            setLocation(prev => ({
+              ...prev,
+              error: `Error al actualizar: ${err.message}`
+            }));
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      }
     }
   }, [isOpen])
 
@@ -64,6 +196,15 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
+          deviceInfo: {
+            ip: localIP || 'unknown',
+            dispositivo: deviceInfo.dispositivo,
+            userAgent: deviceInfo.userAgent,
+            platform: deviceInfo.platform,
+            location: location.latitude && location.longitude 
+              ? `${location.latitude},${location.longitude}` 
+              : 'ubicacion_desconocida'
+          },
           ...(tipoUsuario === "administrador" && { password })
         })
       });

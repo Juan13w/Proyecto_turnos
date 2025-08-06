@@ -5,7 +5,7 @@ import { headers } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, deviceInfo } = await request.json()
 
     if (!email) {
       return NextResponse.json({ error: "Email requerido" }, { status: 400 })
@@ -47,23 +47,101 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Empleado no encontrado" }, { status: 401 })
     }
 
-    // Obtener información del dispositivo desde el User-Agent
-    const userAgent = request.headers.get('user-agent') || 'Dispositivo desconocido';
-    const ipAddress = await getClientIP(request);
-
-    // Actualizar o insertar en info_sesion
-    try {
-      await sql`
-        INSERT INTO info_sesion (empleado_id, dispositivo, direccion_ip, ubicacion)
-        VALUES (${empleado[0].empleado_id}, ${userAgent}, ${ipAddress}, 0)
-        ON DUPLICATE KEY UPDATE 
-          dispositivo = VALUES(dispositivo),
-          direccion_ip = VALUES(direccion_ip)
-      `;
-    } catch (error) {
-      console.error('Error al actualizar info_sesion:', error);
-      // Continuar con el login a pesar del error en el registro de sesión
+    // Obtener información del dispositivo del frontend o del User-Agent
+    const userAgent = request.headers.get('user-agent') || 'Desconocido';
+    const rawIP = deviceInfo?.ip || await getClientIP(request);
+    const ipAddress = rawIP || '0.0.0.0';
+    
+    // Si el frontend envía información del dispositivo, usarla
+    // De lo contrario, usar solo la información básica del User-Agent
+    let dispositivo = 'Computador';
+    let locationData = deviceInfo?.location || 'No disponible';
+    
+    if (deviceInfo?.dispositivo) {
+      // Usar la información del dispositivo proporcionada por el frontend
+      dispositivo = deviceInfo.dispositivo.substring(0, 50);
+    } else {
+      // Análisis básico del User-Agent como respaldo
+      let os = 'Sistema';
+      if (userAgent.includes('Windows')) os = 'Windows';
+      else if (userAgent.includes('Mac OS')) os = 'macOS';
+      else if (userAgent.includes('Linux')) os = 'Linux';
+      else if (userAgent.includes('Android')) os = 'Android';
+      else if (userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('iPod')) os = 'iOS';
+      
+      const isMobile = /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(userAgent);
+      dispositivo = isMobile ? `${os} Móvil` : `${os} Computador`;
     }
+
+    // Procesar la ubicación si está disponible
+    let latitud = null;
+    let longitud = null;
+    let tieneUbicacion = 0;
+    
+    if (deviceInfo?.location && deviceInfo.location !== 'ubicacion_desconocida') {
+      try {
+        const [lat, lon] = deviceInfo.location.split(',').map((coord: string) => {
+          const num = parseFloat(coord.trim());
+          return isNaN(num) ? null : num;
+        });
+        
+        if (lat !== null && lon !== null) {
+          latitud = lat;
+          longitud = lon;
+          tieneUbicacion = 1;
+          console.log('Ubicación obtenida:', { latitud, longitud });
+        }
+      } catch (err) {
+        console.error('Error al procesar la ubicación:', err);
+      }
+    }
+
+    // Insertar nuevo registro de sesión
+    console.log('=== INICIO REGISTRO DE SESIÓN ===');
+    console.log('Datos de la nueva sesión:', {
+      empleado_id: empleado[0].empleado_id,
+      dispositivo,
+      direccion_ip: ipAddress,
+      tiene_ubicacion: tieneUbicacion,
+      latitud,
+      longitud,
+      raw_location: deviceInfo?.location || 'No disponible'
+    });
+
+    try {
+      // Insertar nuevo registro con la información de ubicación
+      const result = await sql`
+        INSERT INTO info_sesion 
+          (empleado_id, dispositivo, direccion_ip, ubicacion, latitud, longitud)
+        VALUES 
+          (${empleado[0].empleado_id}, ${dispositivo}, ${ipAddress}, ${tieneUbicacion}, 
+           ${latitud}, ${longitud})
+      ` as any; // Usamos 'as any' temporalmente para evitar errores de tipo
+      
+      // Mostrar información del resultado
+      const insertResult = Array.isArray(result) ? result[0] : result;
+      console.log('Nuevo registro de sesión creado:', {
+        affectedRows: insertResult.affectedRows,
+        insertId: insertResult.insertId
+      });
+      
+      // Mostrar todos los registros de este empleado
+      const registros = await sql`
+        SELECT * FROM info_sesion 
+        WHERE empleado_id = ${empleado[0].empleado_id}
+        ORDER BY empleado_id DESC
+      `;
+      
+      console.log(`Total de registros de sesión para empleado ${empleado[0].empleado_id}:`, registros.length);
+      
+    } catch (error) {
+      console.error('Error al registrar la sesión:', {
+        message: error instanceof Error ? error.message : 'Error desconocido',
+        detalles: error
+      });
+    }
+    
+    console.log('=== FIN REGISTRO DE SESIÓN ===');
 
     // Login exitoso de empleado
     const userData = {
