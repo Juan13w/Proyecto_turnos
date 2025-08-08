@@ -7,14 +7,10 @@ import "./Navbar.css"
 interface UserInfo {
   id: number
   email: string
-  sede: {
+  turno?: {
     id: number
-    nombre: string
-  }
-  turno: {
-    id: number
-    hora_entrada: string
-    hora_salida: string
+    hora_entrada?: string
+    hora_salida?: string
   } | null
   isAdmin: boolean
 }
@@ -50,7 +46,7 @@ const Navbar = () => {
     if (userData.isAdmin) {
       console.log(`Usuario ${userData.email} iniciando sesión como Administrador`)
     } else {
-      console.log(`Usuario ${userData.email} iniciando sesión en ${userData.sede.nombre}`)
+      console.log(`Usuario ${userData.email} iniciando sesión`)
     }
   }
 
@@ -69,9 +65,13 @@ const Navbar = () => {
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="navbar-container">
           <div className="navbar-brand">
-            <h2>TurnoSync
-              
-            </h2>
+            <h2>TurnoSync</h2>
+          </div>
+          <div className="navbar-logos">
+            <img src="/images/logo1.png" alt="Logo 1" className="nav-logo" />
+            <img src="/images/logo2.png" alt="Logo 2" className="nav-logo" />
+            <img src="/images/logo3.png" alt="Logo 3" className="nav-logo" />
+            <img src="/images/logo4.png" alt="Logo 4" className="nav-logo" />
           </div>
           <div className="navbar-menu">
             {!isLoggedIn ? (
@@ -83,7 +83,7 @@ const Navbar = () => {
                 <span className="user-greeting">
                   {userInfo?.isAdmin
                     ? `${userInfo.email} (Admin)`
-                    : userInfo?.sede.nombre}
+                    : userInfo?.email}
                 </span>
                 <button className="navbar-button logout-btn" onClick={handleLogout}>
                   Cerrar sesión

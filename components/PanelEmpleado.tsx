@@ -57,6 +57,41 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
     salida: "",
   });
 
+  const guardarRegistroCompleto = async (datosRegistro = registro) => {
+    try {
+      const response = await fetch("/api/registro/historial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empleado_email: user.email,
+          fecha: new Date().toLocaleDateString('es-ES'),
+          hora_entrada: datosRegistro.entrada || null,
+          hora_salida: datosRegistro.salida || null,
+          break1_salida: datosRegistro.break1Salida || null,
+          break1_entrada: datosRegistro.break1Entrada || null,
+          almuerzo_salida: datosRegistro.almuerzoSalida || null,
+          almuerzo_entrada: datosRegistro.almuerzoEntrada || null,
+          break2_salida: datosRegistro.break2Salida || null,
+          break2_entrada: datosRegistro.break2Entrada || null,
+        })
+      });
+      
+      if (response.ok) {
+        setMensaje("Registro guardado exitosamente");
+        setShowCompletado(true);
+        return true;
+      } else {
+        const errorData = await response.json();
+        setMensaje(errorData.error || "Error al guardar el registro");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error al guardar el registro:", error);
+      setMensaje("Error de conexión al guardar el registro");
+      return false;
+    }
+  };
+
   const registrarHora = async (campo: keyof typeof registro) => {
     if (!user?.turno?.id) {
       setMensaje("No se encontró el turno asignado. Comunícate con RRHH.");
@@ -66,11 +101,19 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
     setMensaje("");
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-    setRegistro(prev => ({ ...prev, [campo]: hora }));
+    
+    // Creamos un objeto con la actualización del estado
+    const nuevoRegistro = { ...registro, [campo]: hora };
+    
+    // Actualizamos el estado local primero para una mejor experiencia de usuario
+    setRegistro(nuevoRegistro);
+    
     let tipo = "";
     switch (campo) {
       case "entrada": tipo = "entrada"; break;
-      case "salida": tipo = "salida"; break;
+      case "salida": 
+        tipo = "salida"; 
+        break;
       case "break1Salida": tipo = "break1_salida"; break;
       case "break1Entrada": tipo = "break1_entrada"; break;
       case "almuerzoSalida": tipo = "almuerzo_salida"; break;
@@ -79,19 +122,35 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
       case "break2Entrada": tipo = "break2_entrada"; break;
       default: tipo = campo;
     }
+    
     try {
+      // Primero registramos la hora en el turno
       const res = await fetch("/api/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ turnoId: user.turno.id, tipo })
       });
+      
       const data = await res.json();
       if (data.success) {
         setMensaje(`Hora registrada correctamente para ${tipo.replace('_', ' ')}.`);
+        
+        // Si es la hora de salida, guardamos automáticamente el registro completo
+        if (campo === 'salida') {
+          // Usamos el estado actualizado para guardar el registro completo
+          const guardado = await guardarRegistroCompleto(nuevoRegistro);
+          if (guardado) {
+            setMensaje("Hora de salida registrada y guardada correctamente.");
+          }
+        }
       } else {
+        // Si hay un error, revertimos el cambio en el estado local
+        setRegistro(prev => ({ ...prev, [campo]: "" }));
         setMensaje(data.error || "Error al registrar hora");
       }
     } catch (error) {
+      // Si hay un error, revertimos el cambio en el estado local
+      setRegistro(prev => ({ ...prev, [campo]: "" }));
       setMensaje("Error de conexión al guardar el registro");
     } finally {
       setLoading("");
@@ -160,7 +219,7 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
           <h3>Registro de Horarios</h3>
           <p>Registra tus horarios de entrada, breaks y salida</p>
           
-          <form onSubmit={handleSubmit} className="registro-horarios-form">
+          <form onSubmit={(e) => { e.preventDefault(); }} className="registro-horarios-form">
             <div className="registro-grid">
               <RegistroCard type="entrada" emoji="↪" label="Entrada" time={registro.entrada} onRegister={() => registrarHora('entrada')} isLoading={loading === 'entrada'} />
               <RegistroCard type="pausa" emoji="☕︎" label="Salida Break 1" time={registro.break1Salida} onRegister={() => registrarHora('break1Salida')} isLoading={loading === 'break1Salida'} />
@@ -179,13 +238,6 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
             )}
 
             <div className="button-group">
-              <button
-                type="submit"
-                disabled={isSubmitDisabled}
-                className="guardar-registro-btn"
-              >
-                Guardar Registro Completo
-              </button>
               <button
                 type="button"
                 onClick={() => onLogout && onLogout()}

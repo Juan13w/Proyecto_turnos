@@ -4,15 +4,15 @@ import { sql } from "@/lib/database"
 export async function GET() {
   try {
     // Usando nombres exactos de columnas de la estructura original
-    const sedes = await sql`
-      SELECT Id_sede_PK, Nombre, Direccion_IP
-      FROM sede
-      ORDER BY Nombre
+    const infoSesiones = await sql`
+      SELECT id, nombre, direccion_ip as direccionIP
+      FROM info_sesion
+      ORDER BY nombre
     `
 
     return NextResponse.json({
       success: true,
-      sedes: sedes,
+      sedes: infoSesiones,
     })
   } catch (error) {
     console.error("Error obteniendo sedes:", error)
