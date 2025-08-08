@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
 import "./PanelAdmin.css";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import 'jspdf-autotable';
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    getNumberOfPages(): number;
+  }
+}
 
 const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = ({ user, onLogout }) => {
   const [detalleJornada, setDetalleJornada] = useState<any | null>(null);
@@ -86,6 +96,152 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
+  const generarPDF = async (historial: any[], email: string) => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'letter'
+    });
+
+    // Formatear fecha de generación
+    const ahora = new Date();
+    const opcionesFecha: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    };
+    const fechaGeneracion = ahora.toLocaleDateString('es-CO', opcionesFecha);
+
+    // Preparar datos para la tabla
+    const tableData = historial.map(registro => {
+      const fecha = new Date(registro.fecha).toLocaleDateString('es-CO');
+      const entrada = registro.hora_entrada || '-';
+      const salida = registro.hora_salida || '-';
+      const total = calcularHorasTrabajadas(registro);
+      
+      // Formatear breaks
+      const break1 = registro.break1_salida && registro.break1_entrada 
+        ? `${registro.break1_salida} / ${registro.break1_entrada}` 
+        : '-';
+        
+      const almuerzo = registro.almuerzo_salida && registro.almuerzo_entrada 
+        ? `${registro.almuerzo_salida} / ${registro.almuerzo_entrada}` 
+        : '-';
+        
+      const break2 = registro.break2_salida && registro.break2_entrada 
+        ? `${registro.break2_salida} / ${registro.break2_entrada}` 
+        : '-';
+
+      return [fecha, entrada, break1, almuerzo, break2, salida, total];
+    });
+
+    // ===== Encabezado =====
+    
+    // Título del reporte
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('REPORTE DE ASISTENCIA', 104, 20, { align: 'right' });
+
+    // Información del empleado
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Empleado: ${email}`, 23, 35, { align: 'left' });
+    doc.text(`Generado: ${fechaGeneracion}`, 23, 45, { align: 'left' }  );
+    
+    // ===== Tabla =====
+    autoTable(doc, {
+      head: [
+        [
+          { content: 'FECHA', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 25 } },
+          { content: 'ENTRADA', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 18 } },
+          { content: 'BREAK 1', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 25 } },
+          { content: 'ALMUERZO', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 25 } },
+          { content: 'BREAK 2', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 25 } },
+          { content: 'SALIDA', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 18 } },
+          { content: 'TOTAL', styles: { halign: 'center', fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 20 } }
+        ]
+      ],
+      body: tableData,
+      startY: 55,
+      margin: { left: 23, right: 23 },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.2,
+        textColor: [0, 0, 0],
+        font: 'helvetica'
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9,
+        halign: 'center',
+        valign: 'middle',
+        lineWidth: 0.1
+      },
+      bodyStyles: {
+        fontSize: 8,
+        cellPadding: 3,
+        valign: 'middle',
+        halign: 'center',
+        lineWidth: 0.1
+      },
+      columnStyles: {
+        0: { cellWidth: 25, halign: 'center' },
+        1: { cellWidth: 20, halign: 'center' },
+        2: { cellWidth: 30, halign: 'center' },
+        3: { cellWidth: 30, halign: 'center' },
+        4: { cellWidth: 25, halign: 'center' },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 20, halign: 'center' }
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      theme: 'grid',
+      tableLineColor: [200, 200, 200],
+      tableLineWidth: 0.1,
+      showHead: 'everyPage',
+      didDrawPage: function (data) {
+        const pageCount = doc.getNumberOfPages();
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.height || pageSize.getHeight();
+        
+        // Pie de página
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageSize.width / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+        
+        // Línea de pie de página
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(20, pageHeight - 15, pageSize.width - 20, pageHeight - 15);
+        
+        // Texto del pie de página
+        doc.setFontSize(7);
+        doc.text(
+          'Sistema de Control de Asistencia - Generado automáticamente',
+          pageSize.width / 2,
+          pageHeight - 5,
+          { align: 'center' }
+        );
+      }
+    });
+
+    // Guardar el PDF
+    doc.save(`reporte_horarios_${email}_${ahora.toISOString().split('T')[0]}.pdf`);
+  };
+
   return (
     <div className="admin-panel-container">
       <nav className="admin-navbar">
@@ -127,6 +283,12 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
             <div className="employee-info">
               <h4>Mostrando historial para:</h4>
               <p>{busqueda}</p>
+              <button 
+                onClick={() => generarPDF(historial, busqueda)}
+                className="download-pdf-btn"
+              >
+                📥 Descargar PDF
+              </button>
             </div>
             <div className="history-list">
               <h5>Fechas registradas:</h5>

@@ -92,15 +92,65 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
     }
   };
 
+  const validarOrdenRegistro = (campo: keyof typeof registro): { valido: boolean; mensaje?: string } => {
+    const ordenCampos: (keyof typeof registro)[] = [
+      'entrada',
+      'break1Salida',
+      'break1Entrada',
+      'almuerzoSalida',
+      'almuerzoEntrada',
+      'break2Salida',
+      'break2Entrada',
+      'salida'
+    ];
+
+    const indiceCampoActual = ordenCampos.indexOf(campo);
+    
+    // Verificar si el campo ya está registrado
+    if (registro[campo]) {
+      return { valido: false, mensaje: `Ya se ha registrado la ${campo.replace(/([A-Z])/g, ' $1').toLowerCase()}` };
+    }
+
+    // Para el primer registro (entrada), no hay que verificar nada más
+    if (indiceCampoActual === 0) return { valido: true };
+
+    // Verificar que todos los campos anteriores estén registrados
+    for (let i = 0; i < indiceCampoActual; i++) {
+      const campoAnterior = ordenCampos[i];
+      if (!registro[campoAnterior]) {
+        const nombreCampoAnterior = campoAnterior.replace(/([A-Z])/g, ' $1').toLowerCase();
+        return { 
+          valido: false, 
+          mensaje: `Primero debes registrar la ${nombreCampoAnterior}` 
+        };
+      }
+    }
+
+    return { valido: true };
+  };
+
   const registrarHora = async (campo: keyof typeof registro) => {
     if (!user?.turno?.id) {
       setMensaje("No se encontró el turno asignado. Comunícate con RRHH.");
       return;
     }
+
+    // Validar el orden de registro
+    const validacion = validarOrdenRegistro(campo);
+    if (!validacion.valido) {
+      setMensaje(validacion.mensaje || 'No se puede registrar esta hora en este momento');
+      return;
+    }
+
     setLoading(campo);
     setMensaje("");
     const ahora = new Date();
-    const hora = ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const hora = ahora.toLocaleTimeString("es-CO", { 
+      hour: "2-digit", 
+      minute: "2-digit", 
+      second: "2-digit", 
+      hour12: false 
+    });
     
     // Creamos un objeto con la actualización del estado
     const nuevoRegistro = { ...registro, [campo]: hora };
@@ -111,9 +161,7 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
     let tipo = "";
     switch (campo) {
       case "entrada": tipo = "entrada"; break;
-      case "salida": 
-        tipo = "salida"; 
-        break;
+      case "salida": tipo = "salida"; break;
       case "break1Salida": tipo = "break1_salida"; break;
       case "break1Entrada": tipo = "break1_entrada"; break;
       case "almuerzoSalida": tipo = "almuerzo_salida"; break;
@@ -221,14 +269,92 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
           
           <form onSubmit={(e) => { e.preventDefault(); }} className="registro-horarios-form">
             <div className="registro-grid">
-              <RegistroCard type="entrada" emoji="↪" label="Entrada" time={registro.entrada} onRegister={() => registrarHora('entrada')} isLoading={loading === 'entrada'} />
-              <RegistroCard type="pausa" emoji="☕︎" label="Salida Break 1" time={registro.break1Salida} onRegister={() => registrarHora('break1Salida')} isLoading={loading === 'break1Salida'} />
-              <RegistroCard type="entrada" emoji="☕︎" label="Entrada Break 1" time={registro.break1Entrada} onRegister={() => registrarHora('break1Entrada')} isLoading={loading === 'break1Entrada'} />
-              <RegistroCard type="pausa" emoji="🍴︎" label="Salida Almuerzo" time={registro.almuerzoSalida} onRegister={() => registrarHora('almuerzoSalida')} isLoading={loading === 'almuerzoSalida'} />
-              <RegistroCard type="entrada" emoji="🍴︎" label="Entrada Almuerzo" time={registro.almuerzoEntrada} onRegister={() => registrarHora('almuerzoEntrada')} isLoading={loading === 'almuerzoEntrada'} />
-              <RegistroCard type="pausa" emoji="☕︎" label="Salida Break 2" time={registro.break2Salida} onRegister={() => registrarHora('break2Salida')} isLoading={loading === 'break2Salida'} />
-              <RegistroCard type="entrada" emoji="☕︎" label="Entrada Break 2" time={registro.break2Entrada} onRegister={() => registrarHora('break2Entrada')} isLoading={loading === 'break2Entrada'} />
-              <RegistroCard type="salida" emoji="↩" label="Salida" time={registro.salida} onRegister={() => registrarHora('salida')} isLoading={loading === 'salida'} />
+              <RegistroCard 
+                type="entrada" 
+                emoji="↪" 
+                label="Entrada" 
+                time={registro.entrada} 
+                onRegister={() => registrarHora('entrada')} 
+                isLoading={loading === 'entrada'}
+                isDisabled={false} // Siempre habilitado como primer paso
+              />
+              
+              <RegistroCard 
+                type="pausa" 
+                emoji="☕︎" 
+                label="Salida Break 1" 
+                time={registro.break1Salida} 
+                onRegister={() => registrarHora('break1Salida')} 
+                isLoading={loading === 'break1Salida'}
+                isDisabled={!registro.entrada}
+                disabledReason={!registro.entrada ? 'Primero debes registrar la entrada' : ''}
+              />
+              
+              <RegistroCard 
+                type="entrada" 
+                emoji="☕︎" 
+                label="Entrada Break 1" 
+                time={registro.break1Entrada} 
+                onRegister={() => registrarHora('break1Entrada')} 
+                isLoading={loading === 'break1Entrada'}
+                isDisabled={!registro.break1Salida}
+                disabledReason={!registro.break1Salida ? 'Primero debes registrar la salida del break 1' : ''}
+              />
+              
+              <RegistroCard 
+                type="pausa" 
+                emoji="🍴︎" 
+                label="Salida Almuerzo" 
+                time={registro.almuerzoSalida} 
+                onRegister={() => registrarHora('almuerzoSalida')} 
+                isLoading={loading === 'almuerzoSalida'}
+                isDisabled={!registro.break1Entrada}
+                disabledReason={!registro.break1Entrada ? 'Primero debes registrar la entrada del break 1' : ''}
+              />
+              
+              <RegistroCard 
+                type="entrada" 
+                emoji="🍴︎" 
+                label="Entrada Almuerzo" 
+                time={registro.almuerzoEntrada} 
+                onRegister={() => registrarHora('almuerzoEntrada')} 
+                isLoading={loading === 'almuerzoEntrada'}
+                isDisabled={!registro.almuerzoSalida}
+                disabledReason={!registro.almuerzoSalida ? 'Primero debes registrar la salida de almuerzo' : ''}
+              />
+              
+              <RegistroCard 
+                type="pausa" 
+                emoji="☕︎" 
+                label="Salida Break 2" 
+                time={registro.break2Salida} 
+                onRegister={() => registrarHora('break2Salida')} 
+                isLoading={loading === 'break2Salida'}
+                isDisabled={!registro.almuerzoEntrada}
+                disabledReason={!registro.almuerzoEntrada ? 'Primero debes registrar la entrada de almuerzo' : ''}
+              />
+              
+              <RegistroCard 
+                type="entrada" 
+                emoji="☕︎" 
+                label="Entrada Break 2" 
+                time={registro.break2Entrada} 
+                onRegister={() => registrarHora('break2Entrada')} 
+                isLoading={loading === 'break2Entrada'}
+                isDisabled={!registro.break2Salida}
+                disabledReason={!registro.break2Salida ? 'Primero debes registrar la salida del break 2' : ''}
+              />
+              
+              <RegistroCard 
+                type="salida" 
+                emoji="↩" 
+                label="Salida" 
+                time={registro.salida} 
+                onRegister={() => registrarHora('salida')} 
+                isLoading={loading === 'salida'}
+                isDisabled={!registro.break2Entrada}
+                disabledReason={!registro.break2Entrada ? 'Primero debes registrar la entrada del break 2' : ''}
+              />
             </div>
 
             {mensaje && (
@@ -238,10 +364,9 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
             )}
 
             <div className="button-group">
-              <button
-                type="button"
-                onClick={() => onLogout && onLogout()}
+              <button 
                 className="cerrar-sesion-btn"
+                onClick={onLogout}
               >
                 Cerrar Sesión
               </button>
@@ -253,25 +378,79 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
   );
 };
 
-const RegistroCard: React.FC<{emoji: string, label: string, time: string, onRegister: () => void, isLoading: boolean, type: string}> = ({emoji, label, time, onRegister, isLoading, type}) => (
-  <div className={`registro-card card-${type}`}>
-    <span className="registro-label"><span className={`registro-emoji emoji-${type}`}>{emoji}</span> {label}</span>
-    <input 
-      type="text" 
-      value={time || "--:--:--"} 
-      placeholder="--:--:--" 
-      disabled 
-      className="registro-input"
-    />
-    <button 
-      type="button" 
-      onClick={onRegister}
-      disabled={isLoading}
-      className="registro-btn"
+interface RegistroCardProps {
+  emoji: string;
+  label: string;
+  time: string;
+  onRegister: () => void;
+  isLoading: boolean;
+  type: string;
+  isDisabled?: boolean;
+  disabledReason?: string;
+}
+
+const RegistroCard: React.FC<RegistroCardProps> = ({
+  emoji, 
+  label, 
+  time, 
+  onRegister, 
+  isLoading, 
+  type,
+  isDisabled = false,
+  disabledReason = ''
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
+  const handleClick = () => {
+    if (!isDisabled) {
+      onRegister();
+    }
+  };
+
+  return (
+    <div 
+      className={`registro-card card-${type} ${isDisabled ? 'disabled' : ''}`}
+      onMouseEnter={() => isDisabled && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
     >
-      {isLoading ? "Guardando..." : "Registrar Hora"}
-    </button>
-  </div>
-);
+      <span className="registro-label">
+        <span className={`registro-emoji emoji-${type}`}>
+          {emoji}
+        </span> 
+        {label}
+      </span>
+      <div className="registro-time">
+        <input 
+          type="text" 
+          value={time || "--:--:--"} 
+          placeholder="--:--:--" 
+          disabled 
+          className="registro-input"
+        />
+        {time && <span className="registro-check">✓</span>}
+      </div>
+      <button 
+        type="button" 
+        onClick={handleClick}
+        disabled={isLoading || isDisabled}
+        className={`registro-btn ${isLoading ? 'loading' : ''}`}
+        title={isDisabled ? disabledReason : ''}
+      >
+        {isLoading ? (
+          <span className="loading-spinner">⏳</span>
+        ) : time ? (
+          '✓ Registrado'
+        ) : (
+          'Registrar Hora'
+        )}
+      </button>
+      {showTooltip && isDisabled && disabledReason && (
+        <div className="registro-tooltip">
+          {disabledReason}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default PanelEmpleado;
