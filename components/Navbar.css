@@ -23,9 +23,39 @@
   margin: 0 auto;
   padding: 0 20px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  height: 70px;
+  justify-content: space-between;
+  height: 80px;
+  position: relative;
+}
+
+.navbar-brand {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.navbar-logos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  flex-wrap: wrap;
+  padding: 0 20px;
+}
+
+.nav-logo {
+  height: 50px;  /* Aumentado de 35px a 50px */
+  width: auto;
+  max-width: 120px;  /* Aumentado de 100px a 120px */
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.nav-logo:hover {
+  transform: scale(1.1);
 }
 
 .navbar-brand h2 {
@@ -33,6 +63,7 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .navbar-menu {
@@ -84,10 +115,63 @@
 }
 
 /* Responsive design */
+@media (max-width: 992px) {
+  .navbar-logos {
+    gap: 10px;
+    padding: 0 10px;
+  }
+  
+  .nav-logo {
+    height: 40px;  /* Aumentado de 30px a 40px */
+    max-width: 100px;  /* Aumentado de 80px a 100px */
+  }
+}
+
 @media (max-width: 768px) {
   .navbar-container {
     padding: 0 15px;
-    height: 60px;
+    height: auto;
+    min-height: 70px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  
+  .navbar-logos {
+    order: 3;
+    flex: 0 0 100%;
+    margin-top: 10px;
+    padding: 5px 0;
+    position: static;
+    transform: none;
+    z-index: 1;
+  }
+  
+  .navbar-brand {
+    position: static;
+    transform: none;
+    margin-right: auto;
+  }
+  
+  .nav-logo {
+    height: 35px;  /* Aumentado de 25px a 35px */
+    max-width: 90px;  /* Aumentado de 70px a 90px */
+  }
+  
+  .navbar-brand h2 {
+    font-size: 1.2rem;
+    position: static;
+    transform: none;
+  }
+  
+  .navbar-logos {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    justify-content: center;
+    z-index: -1;
   }
 
   .navbar-brand h2 {
