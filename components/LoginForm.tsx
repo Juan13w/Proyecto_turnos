@@ -191,6 +191,61 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
     setError("");
 
     try {
+      // Intentar obtener geolocalización más precisa en el submit (mejor prompt y mejor fix)
+      let submitLat: number | null = location.latitude ?? null;
+      let submitLon: number | null = location.longitude ?? null;
+      let submitAccuracy: number | null = null;
+      try {
+        if (typeof window !== 'undefined' && navigator?.geolocation) {
+          // Preferimos watchPosition para mejorar la precisión con un tiempo de espera
+          const TARGET_ACCURACY = 50; // metros
+          const TIME_LIMIT_MS = 12000; // 12s
+          const bestPos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            let best: GeolocationPosition | null = null;
+            const watchId = navigator.geolocation.watchPosition(
+              (pos) => {
+                // Guardar el mejor fix hasta ahora
+                if (
+                  !best ||
+                  (typeof pos.coords.accuracy === 'number' && typeof best.coords.accuracy === 'number' && pos.coords.accuracy < best.coords.accuracy)
+                ) {
+                  best = pos;
+                }
+                // Si ya es suficientemente preciso, resolvemos
+                if (pos.coords.accuracy && pos.coords.accuracy <= TARGET_ACCURACY) {
+                  navigator.geolocation.clearWatch(watchId);
+                  resolve(pos);
+                }
+              },
+              (err) => {
+                // Si falla, intentamos como respaldo un único getCurrentPosition
+                navigator.geolocation.clearWatch(watchId);
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  enableHighAccuracy: true,
+                  timeout: 10000,
+                  maximumAge: 0
+                });
+              },
+              { enableHighAccuracy: true, timeout: TIME_LIMIT_MS, maximumAge: 0 }
+            );
+            // Límite de tiempo: resolver con el mejor fix disponible
+            setTimeout(() => {
+              navigator.geolocation.clearWatch(watchId);
+              if (best) {
+                resolve(best);
+              } else {
+                reject(new Error('Timeout de geolocalización'));
+              }
+            }, TIME_LIMIT_MS);
+          });
+          submitLat = bestPos.coords.latitude;
+          submitLon = bestPos.coords.longitude;
+          submitAccuracy = typeof bestPos.coords.accuracy === 'number' ? bestPos.coords.accuracy : null;
+        }
+      } catch (geoErr) {
+        console.warn('Geolocalización en submit falló/timeout/denegada:', geoErr);
+      }
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,9 +256,13 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
             dispositivo: deviceInfo.dispositivo,
             userAgent: deviceInfo.userAgent,
             platform: deviceInfo.platform,
-            location: location.latitude && location.longitude 
-              ? `${location.latitude},${location.longitude}` 
-              : 'ubicacion_desconocida'
+            location: (submitLat !== null && submitLon !== null)
+              ? `${submitLat},${submitLon}`
+              : (location.latitude && location.longitude
+                  ? `${location.latitude},${location.longitude}`
+                  : 'ubicacion_desconocida'),
+            accuracy: submitAccuracy,
+            source: (submitLat !== null && submitLon !== null) ? 'browser' : 'ip'
           },
           ...(tipoUsuario === "administrador" && { password })
         })
