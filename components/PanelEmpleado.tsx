@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./PanelEmpleado.css";
-import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
+ 
 
 interface PanelEmpleadoProps {
   user: {
@@ -22,66 +21,9 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
   const [showCompletado, setShowCompletado] = useState(false);
   const [mensaje, setMensaje] = useState<string>("");
   const [loading, setLoading] = useState<string>("");
-  const [generandoPDF, setGenerandoPDF] = useState(false);
+  
 
-  const generarPDF = () => {
-    setGenerandoPDF(true);
-    
-    // Crear un nuevo documento PDF
-    const doc = new jsPDF();
-    
-    // Título del documento
-    doc.setFontSize(18);
-    doc.text('Registro de Horarios', 14, 22);
-    
-    // Información del empleado
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Empleado: ${user.email}`, 14, 32);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })}`, 14, 38);
-    
-    // Crear la tabla de horarios
-    const headers = [['Tipo', 'Hora Registrada']];
-    const data = [
-      ['Entrada', registro.entrada || 'No registrada'],
-      ['Salida Break 1', registro.break1Salida || 'No registrada'],
-      ['Entrada Break 1', registro.break1Entrada || 'No registrada'],
-      ['Salida Almuerzo', registro.almuerzoSalida || 'No registrada'],
-      ['Entrada Almuerzo', registro.almuerzoEntrada || 'No registrada'],
-      ['Salida Break 2', registro.break2Salida || 'No registrada'],
-      ['Entrada Break 2', registro.break2Entrada || 'No registrada'],
-      ['Salida', registro.salida || 'No registrada']
-    ];
-    
-    // @ts-ignore - autoTable no está en la definición de tipos
-    doc.autoTable({
-      head: headers,
-      body: data,
-      startY: 50,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { top: 50 }
-    });
-    
-    // Guardar el PDF
-    doc.save(`registro-horarios-${user.email.split('@')[0]}-${new Date().toISOString().split('T')[0]}.pdf`);
-    
-    setGenerandoPDF(false);
-    setMensaje('PDF generado correctamente');
-  };
+  
 
   useEffect(() => {
     const actualizarHora = () => {
@@ -426,13 +368,6 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
             )}
 
             <div className="button-group">
-              <button
-                type="button"
-                onClick={generarPDF}
-                className="descargar-pdf-btn"
-              >
-                📄 Descargar Registros
-              </button>
               <button
                 type="button"
                 onClick={() => onLogout && onLogout()}
