@@ -25,13 +25,16 @@ export default function Home() {
   }
 
   if (esAdmin) {
-    const userData = JSON.parse(window.localStorage.getItem("adminData") || '{"email": "admin@empresa.com"}');
-    const handleLogout = () => {
-      localStorage.removeItem("adminLogueado");
-      localStorage.removeItem("adminData");
-      setEsAdmin(false);
-    };
-    return <PanelAdmin user={userData} onLogout={handleLogout} />;
+    // Redirigir a la ruta de administrador
+    if (typeof window !== 'undefined') {
+      window.location.href = '/admin';
+    }
+    // Mostrar un mensaje de carga mientras se redirige
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Redirigiendo al panel de administración...</p>
+      </div>
+    );
   }
 
   return (

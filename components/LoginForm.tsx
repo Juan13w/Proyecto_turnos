@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation'
 import "./LoginForm.css"
 
 interface LoginFormProps {
@@ -11,6 +12,7 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
+  const router = useRouter();
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -191,60 +193,10 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
     setError("");
 
     try {
-      // Intentar obtener geolocalización más precisa en el submit (mejor prompt y mejor fix)
-      let submitLat: number | null = location.latitude ?? null;
-      let submitLon: number | null = location.longitude ?? null;
-      let submitAccuracy: number | null = null;
-      try {
-        if (typeof window !== 'undefined' && navigator?.geolocation) {
-          // Preferimos watchPosition para mejorar la precisión con un tiempo de espera
-          const TARGET_ACCURACY = 50; // metros
-          const TIME_LIMIT_MS = 12000; // 12s
-          const bestPos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            let best: GeolocationPosition | null = null;
-            const watchId = navigator.geolocation.watchPosition(
-              (pos) => {
-                // Guardar el mejor fix hasta ahora
-                if (
-                  !best ||
-                  (typeof pos.coords.accuracy === 'number' && typeof best.coords.accuracy === 'number' && pos.coords.accuracy < best.coords.accuracy)
-                ) {
-                  best = pos;
-                }
-                // Si ya es suficientemente preciso, resolvemos
-                if (pos.coords.accuracy && pos.coords.accuracy <= TARGET_ACCURACY) {
-                  navigator.geolocation.clearWatch(watchId);
-                  resolve(pos);
-                }
-              },
-              (err) => {
-                // Si falla, intentamos como respaldo un único getCurrentPosition
-                navigator.geolocation.clearWatch(watchId);
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                  enableHighAccuracy: true,
-                  timeout: 10000,
-                  maximumAge: 0
-                });
-              },
-              { enableHighAccuracy: true, timeout: TIME_LIMIT_MS, maximumAge: 0 }
-            );
-            // Límite de tiempo: resolver con el mejor fix disponible
-            setTimeout(() => {
-              navigator.geolocation.clearWatch(watchId);
-              if (best) {
-                resolve(best);
-              } else {
-                reject(new Error('Timeout de geolocalización'));
-              }
-            }, TIME_LIMIT_MS);
-          });
-          submitLat = bestPos.coords.latitude;
-          submitLon = bestPos.coords.longitude;
-          submitAccuracy = typeof bestPos.coords.accuracy === 'number' ? bestPos.coords.accuracy : null;
-        }
-      } catch (geoErr) {
-        console.warn('Geolocalización en submit falló/timeout/denegada:', geoErr);
-      }
+      // Usar los datos de ubicación ya obtenidos sin bloquear el envío
+      const submitLat: number | null = location.latitude ?? null;
+      const submitLon: number | null = location.longitude ?? null;
+      const submitAccuracy: number | null = null; // no bloqueamos para mejorar precisión
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -292,22 +244,30 @@ const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
             
             // Notificar al componente padre
             onLogin(data.user);
-            
-            // Forzar recarga de la página para actualizar el estado de autenticación
-            console.log('Recargando la página para actualizar el estado de autenticación');
-            window.location.reload();
+            // Cerrar el modal y redirigir al panel de empleado
+            onClose();
+            try {
+              router.replace('/empleado');
+            } catch (_) {
+              // Fallback duro si el enrutador fallara
+              window.location.href = '/empleado';
+            }
             return;
           } else {
             console.log('Guardando datos de administrador en localStorage');
             localStorage.setItem("adminLogueado", "true");
-            localStorage.setItem("adminData", JSON.stringify({ email: data.user.email }));
+            localStorage.setItem("adminData", JSON.stringify(data.user));
             
             // Notificar al componente padre
             onLogin(data.user);
-            
-            // Forzar recarga de la página para actualizar el estado de autenticación
-            console.log('Recargando la página para actualizar el estado de autenticación');
-            window.location.reload();
+            // Cerrar el modal y redirigir al panel de administrador
+            onClose();
+            try {
+              router.replace('/admin');
+            } catch (_) {
+              // Fallback duro si el enrutador fallara
+              window.location.href = '/admin';
+            }
             return;
           }
         } catch (error) {

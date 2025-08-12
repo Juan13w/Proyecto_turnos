@@ -2,42 +2,42 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import PanelEmpleado from '@/components/PanelEmpleado';
+import PanelAdmin from '@/components/PanelAdmin';
 
-export default function EmpleadoPage() {
+export default function AdminPage() {
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const empleadoLogueado = localStorage.getItem('empleadoLogueado');
-    const empleadoDataStr = localStorage.getItem('empleadoData');
+    const adminLogueado = localStorage.getItem('adminLogueado');
+    const adminDataStr = localStorage.getItem('adminData');
 
-    if (!empleadoLogueado || !empleadoDataStr) {
+    if (!adminLogueado || !adminDataStr) {
       router.push('/');
       return;
     }
 
     try {
-      const data = JSON.parse(empleadoDataStr);
+      const data = JSON.parse(adminDataStr);
       setUserData(data);
       setLoading(false);
     } catch (err) {
-      console.error('Error al cargar datos del empleado:', err);
+      console.error('Error al cargar datos del administrador:', err);
       router.push('/');
     }
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('empleadoLogueado');
-    localStorage.removeItem('empleadoData');
+    localStorage.removeItem('adminLogueado');
+    localStorage.removeItem('adminData');
     router.push('/');
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Cargando datos del empleado...</p>
+        <p>Cargando datos del administrador...</p>
       </div>
     );
   }
@@ -45,10 +45,10 @@ export default function EmpleadoPage() {
   if (!userData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>No se encontraron datos del empleado. Redirigiendo...</p>
+        <p>No se encontraron datos del administrador. Redirigiendo...</p>
       </div>
     );
   }
 
-  return <PanelEmpleado user={userData} onLogout={handleLogout} />;
+  return <PanelAdmin user={userData} onLogout={handleLogout} />;
 }

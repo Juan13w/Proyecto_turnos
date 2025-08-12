@@ -112,27 +112,39 @@ export async function POST(request: NextRequest) {
         // Evitar llamar al servicio para IPs privadas típicas
         const isPrivateIP = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.|127\.|::1|fc00:|fe80:)/.test(ipAddress);
         if (!isPrivateIP) {
-          const res = await fetch(`https://ipapi.co/${ipAddress}/json/`, { cache: 'no-store' as any });
-          if (res.ok) {
-            const data = await res.json() as any;
-            const lat = parseFloat(data.latitude);
-            const lon = parseFloat(data.longitude);
-            if (!isNaN(lat) && !isNaN(lon)) {
-              latitud = lat;
-              longitud = lon;
-              tieneUbicacion = 1;
-              console.log('Ubicación aproximada por IP obtenida:', { latitud, longitud, fuente: 'ipapi.co' });
+          // Timeout corto para no bloquear el login
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1200);
+          let res: Response | null = null;
+          try {
+            res = await fetch(`https://ipapi.co/${ipAddress}/json/`, { cache: 'no-store' as any, signal: controller.signal });
+          } finally {
+            clearTimeout(timeoutId);
+          }
+          if (res) {
+            if (res.ok) {
+              const data = await res.json() as any;
+              const lat = parseFloat(data.latitude);
+              const lon = parseFloat(data.longitude);
+              if (!isNaN(lat) && !isNaN(lon)) {
+                latitud = lat;
+                longitud = lon;
+                tieneUbicacion = 1;
+                console.log('Ubicación por IP obtenida');
+              } else {
+                console.warn('ipapi.co sin coordenadas válidas');
+              }
             } else {
-              console.warn('ipapi.co no devolvió coordenadas válidas:', { data });
+              console.warn('Fallo petición a ipapi.co:', res.status);
             }
           } else {
-            console.warn('Fallo petición a ipapi.co:', res.status, await res.text());
+            console.warn('ipapi.co timeout');
           }
         } else {
           console.log('IP privada detectada; se omite geolocalización por IP.');
         }
       } catch (e) {
-        console.warn('Error en geolocalización por IP:', e instanceof Error ? e.message : e);
+        console.warn('Error en geolocalización por IP:', e instanceof Error ? e.message : 'error');
       }
     }
 
@@ -206,13 +218,7 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Mostrar todos los registros de este empleado
-      const registros = await sql`
-        SELECT * FROM info_sesion 
-        WHERE empleado_id = ${empleado[0].empleado_id}
-      `;
-      
-      console.log(`Total de registros de sesión para empleado ${empleado[0].empleado_id}:`, registros.length);
+      // Omitir SELECT adicional para no agregar latencia al login
       
     } catch (error) {
       console.error('Error al registrar la sesión (bloque externo):', {
