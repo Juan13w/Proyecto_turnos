@@ -84,7 +84,7 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
         setMensaje("Registro guardado exitosamente");
         setShowCompletado(true);
         return true;
-      } else {
+      } else { 
         const errorData = await response.json();
         setMensaje(errorData.error || "Error al guardar el registro");
         return false;

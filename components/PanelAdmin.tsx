@@ -23,108 +23,83 @@ declare global {
   }
 }
 
-const generarPDFCompleto = async (historial: any[], busqueda: string, setGenerandoPDF: (loading: boolean) => void) => {
-  if (historial.length === 0) return;
-  
+const generarPDFCompleto = async (historial: any[], busqueda: string, setGenerandoPDF: (loading: boolean) => void): Promise<Blob> => {
+  if (historial.length === 0) {
+    throw new Error('No hay datos para generar el PDF');
+  }
+
   setGenerandoPDF(true);
-  
+
   try {
-    // Cargar dinámicamente solo en el cliente
-    const { jsPDF } = await import('jspdf');
+    const { jsPDF } = (await import('jspdf'));
     const autoTable = (await import('jspdf-autotable')).default;
     
-    // Crear una nueva instancia de PDF
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
+    // Crear un nuevo documento PDF
+    const doc = new jsPDF();
     
-    // Configuración inicial
-    doc.setFont('helvetica');
+    // Título del documento
     doc.setFontSize(18);
-    doc.text('Historial Completo de Registros', 14, 22);
+    doc.text('Registro de Turnos', 14, 22);
     
-    // Información del empleado
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Empleado: ${busqueda}`, 14, 32);
-    
-    // Ordenar el historial por fecha (más reciente primero)
-    const historialOrdenado = [...historial].sort((a, b) => 
-      new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-    );
-    
-    let startY = 50;
-    
-    // Para cada día en el historial
-    for (const [index, registro] of historialOrdenado.entries()) {
-      if (index > 0) {
-        doc.addPage();
-        startY = 20;
-      }
-      
-      // Fecha del registro
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text(
-        `Registro del ${new Date(registro.fecha).toLocaleDateString('es-CO', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}`, 
-        14, 
-        startY
-      );
-      
-      // Crear la tabla de horarios para este día
-      const headers = [['Tipo', 'Hora Registrada']];
-      const data = [
-        ['Entrada', registro.hora_entrada || 'No registrada'],
-        ['Salida Break 1', registro.break1_salida || 'No registrada'],
-        ['Entrada Break 1', registro.break1_entrada || 'No registrada'],
-        ['Salida Almuerzo', registro.almuerzo_salida || 'No registrada'],
-        ['Entrada Almuerzo', registro.almuerzo_entrada || 'No registrada'],
-        ['Salida Break 2', registro.break2_salida || 'No registrada'],
-        ['Entrada Break 2', registro.break2_entrada || 'No registrada'],
-        ['Salida', registro.hora_salida || 'No registrada']
-      ];
-      
-      // Usar autoTable
-      autoTable(doc, {
-        head: headers,
-        body: data,
-        startY: startY + 10,
-        styles: {
-          font: 'helvetica',
-          fontSize: 10
-        },
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: 255,
-          fontStyle: 'bold',
-          fontSize: 10
-        }
-      });
-      
-      // Actualizar la posición Y para el siguiente elemento
-      // @ts-ignore
-      startY = doc.lastAutoTable.finalY + 10;
-      
-      // Agregar total de horas trabajadas si está disponible
-      if (registro.total_horas) {
-        doc.setFontSize(12);
-        doc.text(`Total de horas trabajadas: ${registro.total_horas}`, 14, startY);
-        startY += 10;
-      }
+    // Subtítulo con fecha de búsqueda si existe
+    if (busqueda) {
+      doc.setFontSize(11);
+      doc.text(`Filtro aplicado: ${busqueda}`, 14, 30);
     }
     
-    // Guardar el PDF
-    doc.save(`historial-${new Date().toISOString().split('T')[0]}.pdf`);
+    // Configurar la tabla
+    const tableColumn = ["ID", "Nombre", "Apellido", "Sede", "Fecha", "Hora Entrada", "Hora Salida", "Horas Trabajadas"];
+    const tableRows: any[] = [];
+    
+    // Llenar los datos de la tabla
+    historial.forEach(registro => {
+      const registroData = [
+        registro.id,
+        registro.nombre || 'N/A',
+        registro.apellido || 'N/A',
+        registro.sede || 'N/A',
+        registro.fecha || 'N/A',
+        registro.hora_entrada || 'N/A',
+        registro.hora_salida || 'N/A',
+        registro.horas_trabajadas || 'N/A'
+      ];
+      tableRows.push(registroData);
+    });
+    
+    // Agregar la tabla al PDF
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold',
+        lineWidth: 0.1
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { top: 40 }
+    });
+    
+    // Obtener el PDF como Blob
+    const pdfBlob = doc.output('blob');
+    
+    // También mantener la opción de descarga directa
+    doc.save('registro_turnos.pdf');
+    
+    return pdfBlob;
     
   } catch (error) {
     console.error('Error al generar el PDF:', error);
+    throw error; // Relanzar el error para manejarlo en el llamador
   } finally {
     setGenerandoPDF(false);
   }
@@ -149,9 +124,18 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
   const [generandoPDF, setGenerandoPDF] = useState(false);
   const [horaActual, setHoraActual] = useState<string>("");
   const [fechaActual, setFechaActual] = useState<string>("");
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailData, setEmailData] = useState({
+    recipient: "",
+    message: ""
+  });
+  const [emailSending, setEmailSending] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  const generarPDFCompleto = async (historial: any[], busqueda: string) => {
-    if (historial.length === 0) return;
+  const generarPDFCompleto = async (historial: any[], busqueda: string): Promise<Blob> => {
+    if (historial.length === 0) {
+      throw new Error('No hay datos para generar el PDF');
+    }
     
     setGenerandoPDF(true);
     
@@ -369,12 +353,18 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
         }
       });
       
-      // Guardar el PDF con un nombre que incluya el nombre del empleado y la fecha
+      // Generar el Blob del PDF
+      const pdfBlob = doc.output('blob');
+      
+      // También guardar el PDF localmente
       const nombreArchivo = `historial-${busqueda.split('@')[0]}-${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(nombreArchivo);
       
+      return pdfBlob;
+      
     } catch (error) {
       console.error('Error al generar el PDF:', error);
+      throw error;
     } finally {
       setGenerandoPDF(false);
     }
@@ -407,7 +397,69 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
 
   const handleGenerarPDF = async (e: React.MouseEvent) => {
     e.preventDefault();
-    await generarPDFCompleto(historial, busqueda);
+    try {
+      const pdfBlob = await generarPDFCompleto(historial, busqueda);
+      // Opcional: Si necesitas hacer algo con el blob aquí
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      alert('Error al generar el PDF');
+    }
+  };
+
+  const handleEmailInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEmailData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailSending(true);
+    
+    try {
+      // Generar el PDF primero
+      const pdfBlob = await generarPDFCompleto(historial, busqueda);
+      
+      // Crear FormData para enviar el archivo
+      const formData = new FormData();
+      formData.append('email', emailData.recipient);
+      formData.append('message', emailData.message);
+      
+      // Convertir el Blob a File
+      const pdfFile = new File([pdfBlob], 'registro_turnos.pdf', { type: 'application/pdf' });
+      formData.append('pdf', pdfFile);
+      
+      // Enviar a la API
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al enviar el correo');
+      }
+      
+      // Mostrar mensaje de éxito
+      setShowSuccessMessage(true);
+      setEmailData({ recipient: "", message: "" });
+      
+      // Ocultar el mensaje después de 3 segundos
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setShowEmailModal(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error al enviar el correo:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+      alert(error instanceof Error ? error.message : 'Error al enviar el correo');
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   const handleBuscar = async (e: React.FormEvent) => {
@@ -504,13 +556,22 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
                 <h4>Mostrando historial para:</h4>
                 <p>{busqueda}</p>
               </div>
-              <button 
-                onClick={() => generarPDFCompleto(historial, busqueda)} 
-                className="pdf-button"
-                disabled={generandoPDF}
-              >
-                {generandoPDF ? 'Generando PDF...' : '📊 Descargar PDF Completo'}
-              </button>
+              <div className="button-group">
+                <button 
+                  onClick={() => generarPDFCompleto(historial, busqueda)} 
+                  className="pdf-button"
+                  disabled={generandoPDF}
+                >
+                  {generandoPDF ? 'Generando PDF...' : '📊 Descargar PDF Completo'}
+                </button>
+                <button 
+                  className="email-button"
+                  onClick={() => setShowEmailModal(true)}
+                  disabled={generandoPDF}
+                >
+                  ✉️ Enviar por correo
+                </button>
+              </div>
             </div>
             <div className="history-list">
               <h5>Fechas registradas:</h5>
@@ -561,6 +622,80 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
         </div>
         </main>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="modal-overlay">
+          <div className="email-modal">
+            <div className="modal-header">
+              <h3>Enviar por correo</h3>
+              <button 
+                className="close-button"
+                onClick={() => setShowEmailModal(false)}
+                disabled={emailSending}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSendEmail} className="email-form">
+              <div className="form-group">
+                <label htmlFor="recipient">Correo destinatario:</label>
+                <input
+                  type="email"
+                  id="recipient"
+                  name="recipient"
+                  value={emailData.recipient}
+                  onChange={handleEmailInputChange}
+                  required
+                  placeholder="ejemplo@empresa.com"
+                  disabled={emailSending}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="message">Mensaje (opcional):</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  value={emailData.message}
+                  onChange={handleEmailInputChange}
+                  placeholder="Escribe un mensaje..."
+                  rows={4}
+                  disabled={emailSending}
+                />
+              </div>
+              
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={() => setShowEmailModal(false)}
+                  disabled={emailSending}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="send-button"
+                  disabled={emailSending || !emailData.recipient}
+                >
+                  {emailSending ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+              
+              {showSuccessMessage && (
+                <div className="success-message">
+                  <svg className="success-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>¡Enviado correctamente!</span>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
