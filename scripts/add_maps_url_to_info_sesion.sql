@@ -11,3 +11,4 @@ WHERE maps_url IS NULL AND latitud IS NOT NULL AND longitud IS NOT NULL;
 
 -- 3) Índice útil (opcional) para consultas por empleado
 -- CREATE INDEX IF NOT EXISTS idx_info_sesion_empleado_id ON info_sesion (empleado_id);
+
