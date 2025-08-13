@@ -562,7 +562,7 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
                   className="pdf-button"
                   disabled={generandoPDF}
                 >
-                  {generandoPDF ? 'Generando PDF...' : '📊 Descargar PDF Completo'}
+                  {generandoPDF ? 'Generando PDF...' : '📊 Descargar PDF '}
                 </button>
                 <button 
                   className="email-button"

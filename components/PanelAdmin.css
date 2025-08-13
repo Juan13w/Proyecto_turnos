@@ -184,13 +184,13 @@
 }
 
 .pdf-button {
-  background-color: #1a56db;
+  background-color: #000c25;
   color: white;
   border: none;
   border-radius: 6px;
   padding: 0.6rem 1.2rem;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 350;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -198,12 +198,13 @@
   gap: 0.5rem;
   white-space: nowrap;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  min-width: 100px;
 }
 
 /* Shared button styles */
 .pdf-button,
 .email-button {
-  background-color: #2563eb;
+  background-color: #000b22;
   color: white;
   border: none;
   padding: 0.8rem 1.5rem;
@@ -253,7 +254,7 @@
 
 /* Specific button colors */
 .pdf-button {
-  background-color: #2563eb;
+  background-color: #000000;
 }
 
 .email-button {
@@ -291,10 +292,10 @@
 .email-modal {
   background-color: white;
   border-radius: var(--border-radius);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
+  box-shadow: 0 50px 50px rgba(0, 0, 0, 0.2);
+  width: 300%;
+  max-width: 480px;
+  max-height: 300vh;
   overflow-y: auto;
   animation: modalFadeIn 0.3s ease-out;
 }
@@ -358,7 +359,7 @@
 
 .form-group input,
 .form-group textarea {
-  width: 100%;
+  width: 94%;
   padding: 0.625rem 0.875rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
