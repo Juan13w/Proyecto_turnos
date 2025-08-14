@@ -19,21 +19,6 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [showLoginForm, setShowLoginForm] = useState(false)
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled)
-      }
-    }
-
-    document.addEventListener('scroll', handleScroll, { passive: true })
-    return () => {
-      document.removeEventListener('scroll', handleScroll)
-    }
-  }, [scrolled])
 
   const handleLoginClick = () => {
     setShowLoginForm(true)
@@ -62,16 +47,10 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+      <nav className="navbar">
         <div className="navbar-container">
           <div className="navbar-brand">
             <h2>TurnoSync</h2>
-          </div>
-          <div className="navbar-logos">
-            <img src="/images/logo1.png" alt="Logo 1" className="nav-logo" />
-            <img src="/images/logo2.png" alt="Logo 2" className="nav-logo" />
-            <img src="/images/logo3.png" alt="Logo 3" className="nav-logo" />
-            <img src="/images/logo4.png" alt="Logo 4" className="nav-logo" />
           </div>
           <div className="navbar-menu">
             {!isLoggedIn ? (

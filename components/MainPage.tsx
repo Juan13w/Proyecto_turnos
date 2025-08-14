@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./MainPage.css";
 import Carousel from './Carousel';
 import HomeFeatures from './HomeFeatures';
+import Footer from './Footer';
 
 const MainPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,8 +20,11 @@ const MainPage = () => {
 
   return (
     <div className="main-page">
-      <Carousel />
-      <HomeFeatures />
+      <div className="page-content">
+        <Carousel />
+        <HomeFeatures />
+      </div>
+      <Footer />
     </div>
   );
 }

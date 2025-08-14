@@ -12,12 +12,6 @@
   transition: all 0.3s ease;
 }
 
-/* Efecto de transparencia al hacer scroll */
-.navbar.scrolled {
-  background-color: rgba(78, 99, 139, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
 .navbar-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -30,28 +24,19 @@
 }
 
 .navbar-brand {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+  margin-right: auto; /* Empuja el menú a la derecha */
+  padding-left: 20px;
 }
 
-.navbar-logos {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  flex: 1;
-  flex-wrap: wrap;
-  padding: 0 20px;
-}
+/* Eliminada la clase .navbar-logos ya que los logos se movieron al footer */
 
 .nav-logo {
-  height: 50px;  /* Aumentado de 35px a 50px */
+  height: 50px;  /* Reducido de 70px a 50px */
   width: auto;
-  max-width: 120px;  /* Aumentado de 100px a 120px */
+  max-width: 120px;  /* Reducido de 150px a 120px */
   object-fit: contain;
   transition: transform 0.3s ease;
+  flex-shrink: 1;  /* Permite que los logos se ajusten si es necesario */
 }
 
 .nav-logo:hover {
@@ -70,6 +55,8 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  margin-left: auto; /* Empuja el menú a la derecha */
+  padding-right: 20px;
 }
 
 .navbar-button {

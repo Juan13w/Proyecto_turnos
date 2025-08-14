@@ -32,7 +32,13 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  background-color: #f8fafc;
+  background-color: #1b263b; /* Mismo color que las tarjetas */
+  color: #e0e1dd; /* Color de texto para mejor contraste */
+}
+
+.page-content {
+  flex: 1 0 auto; /* Permite que el contenido principal ocupe el espacio disponible */
+  width: 100%;
 }
 
 /* Hero Section */
@@ -80,7 +86,7 @@ body {
 
 /* Fondo de la siguiente sección igual al del degradado final del hero */
 .features-section, .main-content {
-  background: #101826 !important;
+  background: #ffffff !important;
 }
 
 .hero-content {

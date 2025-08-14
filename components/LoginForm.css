@@ -4,21 +4,24 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(26, 26, 46, 0.95) 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  backdrop-filter: blur(5px);
 }
 
 .login-modal {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
   padding: 0;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  animation: modalSlideIn 0.3s ease-out;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @keyframes modalSlideIn {
@@ -33,18 +36,37 @@
 }
 
 .login-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, #1b263b 0%, #0d1b2a 100%);
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4cc9f0, #3a86ff);
 }
 
 .login-header h2 {
   margin: 0;
-  color: #1f2937;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.login-header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
 }
 
 .close-btn {
@@ -69,21 +91,59 @@
 }
 
 .login-form {
-  padding: 24px;
+  padding: 32px;
 }
 
 .error-message {
   background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
   color: #dc2626;
-  padding: 12px;
+  padding: 14px 16px;
   border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message::before {
+  content: '⚠️';
+  font-size: 1.2rem;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #f9fafb;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background-color: white;
+}
+
+.form-group input::placeholder {
+  color: #9ca3af;
 }
 
 /* Animación para el campo de contraseña admin */
