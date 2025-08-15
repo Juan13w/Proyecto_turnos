@@ -1,3 +1,5 @@
+/* === Carousel.css con degradado más suave de azul oscuro a blanco adaptado a nueva estructura === */
+
 .carousel-container {
   width: 100%;
   height: 500px;
@@ -19,20 +21,20 @@
   border-radius: 0;
 }
 
-/* Degradado inferior que se funde con HomeFeatures */
+/* Degradado inferior que se funde con la sección blanca siguiente */
 .carousel-slide::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(53, 53, 53, 0.888) 40%,      /* Empieza antes */
-    rgba(89, 89, 89, 0.6) 75%, /* Transición intermedia */
-    rgb(156, 156, 156) 100%   /* Azul marino sólido al final */
+    rgba(0, 0, 0, 0.2) 15%,
+    rgba(255, 255, 255, 0.05) 45%,
+    rgba(255, 255, 255, 0.5) 75%,
+    #f3f3f3df 100%
   );
   z-index: 1;
 }
-
 
 .carousel-caption {
   position: absolute;
@@ -56,13 +58,17 @@
   text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
 }
 
-.slick-dots { bottom: 20px; }
+.slick-dots {
+  bottom: 20px;
+}
+
 .slick-dots li button:before {
   font-size: 12px;
   color: white;
   opacity: 0.5;
   transition: all 0.3s ease;
 }
+
 .slick-dots li.slick-active button:before {
   color: var(--accent, #3a86ff);
   opacity: 1;

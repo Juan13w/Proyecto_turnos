@@ -20,7 +20,7 @@ const features = [
 ];
 
 const HomeFeatures = () => {
-  return (
+ return (
     <section className="features-section">
       <div className="features-container">
         <div className="features-header">

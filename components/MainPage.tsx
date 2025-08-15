@@ -27,6 +27,6 @@ const MainPage = () => {
       <Footer />
     </div>
   );
-}
+};
 
 export default MainPage;

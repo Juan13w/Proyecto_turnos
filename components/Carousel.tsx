@@ -55,6 +55,7 @@ const Carousel = () => {
         </svg>
       </div>
     </div>
+    
   );
 };
 
