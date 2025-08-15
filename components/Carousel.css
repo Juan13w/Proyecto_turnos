@@ -26,9 +26,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(76, 76, 76, 0.888) 40%,      /* Empieza antes */
-    rgba(161, 161, 161, 0.6) 75%, /* Transición intermedia */
-    rgb(94, 94, 94) 100%   /* Azul marino sólido al final */
+    rgba(53, 53, 53, 0.888) 40%,      /* Empieza antes */
+    rgba(89, 89, 89, 0.6) 75%, /* Transición intermedia */
+    rgb(156, 156, 156) 100%   /* Azul marino sólido al final */
   );
   z-index: 1;
 }
