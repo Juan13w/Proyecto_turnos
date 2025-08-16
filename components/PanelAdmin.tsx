@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "./PanelAdmin.css";
-import dynamic from 'next/dynamic';
 
 // Tipo para los registros de horario
 interface RegistroHorario {
@@ -23,87 +22,6 @@ declare global {
   }
 }
 
-const generarPDFCompleto = async (historial: any[], busqueda: string, setGenerandoPDF: (loading: boolean) => void): Promise<Blob> => {
-  if (historial.length === 0) {
-    throw new Error('No hay datos para generar el PDF');
-  }
-
-  setGenerandoPDF(true);
-
-  try {
-    const { jsPDF } = (await import('jspdf'));
-    const autoTable = (await import('jspdf-autotable')).default;
-    
-    // Crear un nuevo documento PDF
-    const doc = new jsPDF();
-    
-    // Título del documento
-    doc.setFontSize(18);
-    doc.text('Registro de Turnos', 14, 22);
-    
-    // Subtítulo con fecha de búsqueda si existe
-    if (busqueda) {
-      doc.setFontSize(11);
-      doc.text(`Filtro aplicado: ${busqueda}`, 14, 30);
-    }
-    
-    // Configurar la tabla
-    const tableColumn = ["ID", "Nombre", "Apellido", "Sede", "Fecha", "Hora Entrada", "Hora Salida", "Horas Trabajadas"];
-    const tableRows: any[] = [];
-    
-    // Llenar los datos de la tabla
-    historial.forEach(registro => {
-      const registroData = [
-        registro.id,
-        registro.nombre || 'N/A',
-        registro.apellido || 'N/A',
-        registro.sede || 'N/A',
-        registro.fecha || 'N/A',
-        registro.hora_entrada || 'N/A',
-        registro.hora_salida || 'N/A',
-        registro.horas_trabajadas || 'N/A'
-      ];
-      tableRows.push(registroData);
-    });
-    
-    // Agregar la tabla al PDF
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40,
-      styles: { 
-        fontSize: 8,
-        cellPadding: 2,
-        overflow: 'linebreak',
-        lineWidth: 0.1
-      },
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold',
-        lineWidth: 0.1
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { top: 40 }
-    });
-    
-    // Obtener el PDF como Blob
-    const pdfBlob = doc.output('blob');
-    
-    // También mantener la opción de descarga directa
-    doc.save('registro_turnos.pdf');
-    
-    return pdfBlob;
-    
-  } catch (error) {
-    console.error('Error al generar el PDF:', error);
-    throw error; // Relanzar el error para manejarlo en el llamador
-  } finally {
-    setGenerandoPDF(false);
-  }
-};
 
 // Extender la interfaz de jsPDF para incluir autoTable
 declare module 'jspdf' {
@@ -515,20 +433,20 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
 
   return (
     <div className="admin-panel-container">
-      <nav className="admin-navbar">
-        <div className="navbar-brand">
-          <h3>Panel de Administrador</h3>
-          <span className="admin-email">{user.email}</span>
-        </div>
-        <div className="datetime-container">
-          <div className="clock">
-            <span role="img" aria-label="clock">⏰</span> {horaActual}
-          </div>
-          <div className="date">{fechaActual}</div>
-        </div>
-      </nav>
-
       <div className="admin-main-content">
+        <nav className="admin-navbar">
+          <div className="admin-navbar-row admin-navbar-top">
+            <h3>Panel de Administrador</h3>
+            <div className="clock">{horaActual}</div>
+          </div>
+          <div className="admin-navbar-row admin-navbar-bottom">
+            <div className="admin-email">
+              <span className="email-icon" aria-hidden="true">👤</span>
+              <span>{user.email}</span>
+            </div>
+            <div className="date">{fechaActual}</div>
+          </div>
+        </nav>
         <main>
         <div className="search-card">
           <form className="search-form" onSubmit={handleBuscar}>
@@ -623,7 +541,6 @@ const PanelAdmin: React.FC<{ user: { email: string }; onLogout: () => void }> = 
         </main>
       </div>
 
-      {/* Email Modal */}
       {showEmailModal && (
         <div className="modal-overlay">
           <div className="email-modal">

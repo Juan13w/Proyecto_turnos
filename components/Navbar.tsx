@@ -19,6 +19,21 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [showLoginForm, setShowLoginForm] = useState(false)
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled)
+      }
+    }
+
+    document.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      document.removeEventListener('scroll', handleScroll)
+    }
+  }, [scrolled])
 
   const handleLoginClick = () => {
     setShowLoginForm(true)
@@ -47,31 +62,19 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="navbar">
+      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="navbar-container">
           <div className="navbar-brand">
             <h2>TurnoSync</h2>
           </div>
+          <div className="navbar-logos">
+            {/* Logos have been moved to the footer */}
+          </div>
           <div className="navbar-menu">
             {!isLoggedIn ? (
-              <div className="navbar-actions">
-                <button className="dark-mode-toggle" aria-label="Modo oscuro">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="5"/>
-                    <path d="M12 1v2"/>
-                    <path d="M12 21v2"/>
-                    <path d="M4.22 4.22l1.42 1.42"/>
-                    <path d="M18.36 18.36l1.42 1.42"/>
-                    <path d="M1 12h2"/>
-                    <path d="M21 12h2"/>
-                    <path d="M4.22 19.78l1.42-1.42"/>
-                    <path d="M18.36 5.64l1.42-1.42"/>
-                  </svg>
-                </button>
-                <button className="navbar-button login-btn" onClick={handleLoginClick}>
-                  Inicio de sesión
-                </button>
-              </div>
+              <button className="navbar-button login-btn" onClick={handleLoginClick}>
+                Inicio de sesión
+              </button>
             ) : (
               <div className="user-menu">
                 <span className="user-greeting">

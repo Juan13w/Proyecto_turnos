@@ -99,12 +99,13 @@
 
 .input-with-icon input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  padding: 0.75rem 1rem 0.75rem 3rem; /* Aumentado de 2.5rem a 3rem */
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.95rem;
   transition: border-color 0.2s, box-shadow 0.2s;
   background-color: #f9fafb;
+  text-indent: 0.5rem; /* Añadido para separar el texto del ícono */
 }
 
 .input-with-icon input:focus {
@@ -120,6 +121,7 @@
   transform: translateY(-50%);
   color: #9ca3af;
   pointer-events: none;
+  z-index: 1; /* Asegura que el ícono esté sobre el input */
 }
 
 .input-with-icon input:focus + .input-icon {

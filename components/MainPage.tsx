@@ -1,32 +1,40 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import "./MainPage.css";
 import Carousel from './Carousel';
 import HomeFeatures from './HomeFeatures';
-import Footer from './Footer';
+import { Footer } from './Footer';
 
 const MainPage = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Verificar si el usuario ya está autenticado
-    const empleadoLogueado = window.localStorage.getItem("empleadoLogueado") === "true";
-    const adminLogueado = window.localStorage.getItem("adminLogueado") === "true";
-    setIsLoggedIn(empleadoLogueado || adminLogueado);
-  }, []);
+    const empleadoLogueado = typeof window !== 'undefined' ? window.localStorage.getItem("empleadoLogueado") === "true" : false;
+    const adminLogueado = typeof window !== 'undefined' ? window.localStorage.getItem("adminLogueado") === "true" : false;
+    
+    if (adminLogueado) {
+      router.push('/admin');
+    } else if (empleadoLogueado) {
+      router.push('/empleado');
+    }
+    
+    setIsLoading(false);
+  }, [router]);
 
-  if (isLoggedIn) return null;
+  if (isLoading) {
+    return <div>Cargando...</div>; // O un componente de carga
+  }
 
   return (
     <div className="main-page">
-      <div className="page-content">
-        <Carousel />
-        <HomeFeatures />
-      </div>
+      <Carousel />
+      <HomeFeatures />
       <Footer />
     </div>
   );
-};
+}
 
 export default MainPage;

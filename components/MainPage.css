@@ -32,13 +32,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  background-color: #1b263b; /* Mismo color que las tarjetas */
-  color: #e0e1dd; /* Color de texto para mejor contraste */
-}
-
-.page-content {
-  flex: 1 0 auto; /* Permite que el contenido principal ocupe el espacio disponible */
-  width: 100%;
+  background-color: #f8fafc;
 }
 
 /* Hero Section */

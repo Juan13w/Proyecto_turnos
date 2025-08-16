@@ -244,18 +244,19 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
 
   return (
     <div className="panel-empleado-bg">
-      {showCompletado && (
-        <div className="modal-jornada-completada">
-          <div className="modal-jornada-content">
-            <h2>Jornada laboral completada</h2>
-            <button className="cerrar-sesion-btn" onClick={() => onLogout && onLogout()}>
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="panel-empleado-container">
+        <div className="panel-empleado-content">
+          {showCompletado && (
+            <div className="modal-jornada-completada">
+              <div className="modal-jornada-content">
+                <h2>Jornada laboral completada</h2>
+                <button className="cerrar-sesion-btn" onClick={() => onLogout && onLogout()}>
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
+          )}
+
         <div className="panel-empleado-header">
           <div>
             <h2>Panel de Empleado</h2>
@@ -366,18 +367,11 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
                 {mensaje}
               </div>
             )}
-
-            <div className="button-group">
-              <button
-                type="button"
-                onClick={() => onLogout && onLogout()}
-                className="cerrar-sesion-btn"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+            
           </form>
         </div>
+        </div>
+        <div className="panel-empleado-image"></div>
       </div>
     </div>
   );

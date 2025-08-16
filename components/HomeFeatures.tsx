@@ -1,26 +1,28 @@
 import React from 'react';
 import './HomeFeatures.css';
 
+// Puedes reemplazar estos emojis con iconos SVG si lo prefieres
 const features = [
   {
-    icon: '&#x1F552;', // Reloj
+    icon: '🕒',
     title: 'Gestión de Horarios',
     description: 'Registra entradas, salidas y descansos con un solo clic. Precisión y facilidad para empleados y administradores.',
   },
   {
-    icon: '&#x1F4CB;', // Gráfico de barras
+    icon: '📊',
     title: 'Reportes Detallados',
     description: 'Genera informes completos por empleado o período. Visualiza horas trabajadas, ausencias y puntualidad.',
   },
   {
-    icon: '&#x1F4CA;', // Teléfono móvil
+    icon: '📱',
     title: 'Interfaz Intuitiva',
     description: 'Un diseño limpio y moderno, accesible desde cualquier dispositivo, que no requiere capacitación previa.',
   },
+
 ];
 
 const HomeFeatures = () => {
- return (
+  return (
     <section className="features-section">
       <div className="features-container">
         <div className="features-header">
@@ -30,12 +32,7 @@ const HomeFeatures = () => {
         <div className="features-grid">
           {features.map((feature, index) => (
             <div key={index} className="feature-card">
-              <div className="feature-icon">
-                <span 
-                  className="emoji" 
-                  dangerouslySetInnerHTML={{__html: feature.icon}}
-                />
-              </div>
+              <div className="feature-icon">{feature.icon}</div>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
             </div>

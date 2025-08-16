@@ -1,7 +1,7 @@
 .features-section {
   padding: 5rem 1rem; /* 80px 16px */
-  background-color: #ffffff; /* Fondo blanco */
-  color: #e0e1dd; /* Color de texto claro para las tarjetas */
+  background-color: #1d3753; /* Azul marino oscuro */
+  color: #e0e1dd; /* Texto principal claro */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -20,14 +20,14 @@
   font-size: 2.5rem; /* 40px */
   font-weight: 700;
   margin-bottom: 1rem; /* 16px */
-  color: #1b263b; /* Color oscuro para el título sobre fondo blanco */
+  color: #1c2c49;
   letter-spacing: -0.5px;
   line-height: 1.2;
 }
 
 .features-header p {
   font-size: 1.25rem; /* 20px */
-  color: #4a5568; /* Texto gris oscuro sobre fondo blanco */
+  color: #102953;
   max-width: 700px;
   margin: 0 auto;
   line-height: 1.6;
@@ -42,10 +42,10 @@
 }
 
 .feature-card {
-  background-color: #1b263b; /* Color original de las tarjetas */
+  background-color: #1b263b; /* Azul más claro para las tarjetas */
   padding: 2.5rem 2rem; /* 40px 32px */
   border-radius: 16px;
-  border: 1px solid #2a3b52; /* Borde original */
+  border: 1px solid #2a3b52; /* Borde sutil */
   text-align: left;
   transition: all 0.3s ease;
   height: 100%;
@@ -61,12 +61,14 @@
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
-/* ESTILOS CORREGIDOS PARA LOS EMOJIS */
 .feature-icon {
   font-size: 3rem;
-  line-height: 1;
   margin-bottom: 1.5rem;
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', sans-serif;
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Arial', sans-serif;
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  background-clip: initial;
   border-radius: 50%;
   width: 80px;
   height: 80px;
@@ -74,19 +76,12 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  
-  /* IMPORTANTE: Estos estilos aseguran que los emojis mantengan sus colores originales */
-  background: rgba(58, 134, 255, 0.1); /* Fondo transparente azul */
-  color: initial !important; /* Fuerza el color original del emoji */
-  -webkit-text-fill-color: initial !important; /* Restaura el color original en webkit */
-  background-clip: initial !important; /* Evita que el background clip afecte el texto */
-  -webkit-background-clip: initial !important; /* Evita que el background clip afecte el texto */
-  text-shadow: none; /* Elimina cualquier sombra que pueda afectar el color */
+  box-shadow: none;
+  color: inherit;
 }
 
 .feature-card:hover .feature-icon {
   transform: scale(1.1);
-  background: rgba(58, 134, 255, 0.15); /* Fondo ligeramente más visible al hover */
 }
 
 .feature-card h3 {
