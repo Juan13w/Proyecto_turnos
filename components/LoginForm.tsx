@@ -1,12 +1,15 @@
 "use client"
 
-import { LoginForm as LoginFormComponent } from './ui';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { LoginForm as LoginFormUI } from './ui/LoginForm';
 
 interface LoginFormProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (userData: any) => void;
+  isLoading?: boolean;
 }
 
 /**
@@ -23,28 +26,39 @@ interface LoginFormProps {
  */
 const LoginForm = ({ isOpen, onClose, onLogin }: LoginFormProps) => {
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
 
-  const handleLoginSuccess = (userData: any) => {
-    onLogin(userData);
-    onClose();
-    
-    // Redirigir según el tipo de usuario
-    const isAdmin = userData.isAdmin;
-    const targetPath = isAdmin ? '/admin' : '/empleado';
-    
+  const handleLoginSuccess = async (userData: any) => {
     try {
-      router.replace(targetPath);
-    } catch (_) {
-      // Fallback duro si el enrutador falla
-      window.location.href = targetPath;
+      // Guardar el estado de autenticación
+      if (userData.isAdmin) {
+        localStorage.setItem('adminLogueado', 'true');
+        localStorage.setItem('adminData', JSON.stringify(userData));
+      } else {
+        localStorage.setItem('empleadoLogueado', 'true');
+        localStorage.setItem('empleadoData', JSON.stringify(userData));
+      }
+      
+      // Notificar el inicio de sesión exitoso
+      onLogin(userData);
+      onClose();
+      
+      // Forzar recarga para asegurar que se aplique la autenticación
+      window.location.href = userData.isAdmin ? '/admin' : '/';
+      
+    } catch (error) {
+      console.error('Error during login redirection:', error);
+      toast.error('Ocurrió un error al redirigir');
+      setIsRedirecting(false);
     }
   };
 
   return (
-    <LoginFormComponent 
+    <LoginFormUI
       isOpen={isOpen} 
       onClose={onClose} 
-      onLogin={handleLoginSuccess} 
+      onLogin={handleLoginSuccess}
+      isLoading={isRedirecting}
     />
   );
 };

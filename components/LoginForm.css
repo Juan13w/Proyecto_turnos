@@ -233,25 +233,16 @@
 
 .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 4px;
+  margin-top: 8px;
 }
 
-.cancel-btn,
-.submit-btn {
-  flex: 1;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+
 
 .cancel-btn {
   background-color: #f3f4f6;
   color: #374151;
+  border: 1px solid #d1d5db;
 }
 
 .cancel-btn:hover:not(:disabled) {
@@ -261,24 +252,38 @@
 .submit-btn {
   background-color: #2563eb;
   color: white;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .submit-btn:hover:not(:disabled) {
   background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .submit-btn:disabled,
 .cancel-btn:disabled {
-  background-color: #9ca3af;
+  background-color: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.8;
+  transform: none !important;
+  box-shadow: none !important;
+  height: 10px !important;
+  min-height: 10px !important;
 }
 
 /* Responsive design */
 @media (max-width: 480px) {
   .login-modal {
     width: 95%;
-    margin: 20px;
+    margin: 10px;
   }
 
   .login-header,
@@ -288,5 +293,15 @@
 
   .form-actions {
     flex-direction: column;
+    gap: 8px;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100% !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    font-size: 10px !important;
+    padding: 0 4px !important;
   }
 }

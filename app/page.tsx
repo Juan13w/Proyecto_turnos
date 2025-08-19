@@ -1,40 +1,50 @@
 'use client';
 import React, { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import MainPage from "@/components/MainPage";
 import PanelEmpleado from "@/components/PanelEmpleado";
-import PanelAdmin from "@/components/PanelAdmin";
 import Navbar from "@/components/Navbar";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  const [esEmpleado, setEsEmpleado] = useState(false);
-  const [esAdmin, setEsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    setEsEmpleado(window.localStorage.getItem("empleadoLogueado") === "true");
-    setEsAdmin(window.localStorage.getItem("adminLogueado") === "true");
-  }, []);
-
-  if (esEmpleado) {
-    const userData = JSON.parse(window.localStorage.getItem("empleadoData") || '{"email": "empleado@empresa.com"}');
-    const handleLogout = () => {
-      localStorage.removeItem("empleadoLogueado");
-      localStorage.removeItem("empleadoData");
-      setEsEmpleado(false);
-    };
-    return <PanelEmpleado user={userData} onLogout={handleLogout} />;
-  }
-
-  if (esAdmin) {
-    // Redirigir a la ruta de administrador
-    if (typeof window !== 'undefined') {
-      window.location.href = '/admin';
+    // Verificar autenticación en el cliente
+    const isEmployee = localStorage.getItem("empleadoLogueado") === "true";
+    const isAdmin = localStorage.getItem("adminLogueado") === "true";
+    
+    if (isAdmin) {
+      router.replace('/admin');
+      return;
     }
-    // Mostrar un mensaje de carga mientras se redirige
+
+    if (isEmployee) {
+      const storedData = localStorage.getItem("empleadoData");
+      setUserData(storedData ? JSON.parse(storedData) : { email: "empleado@empresa.com" });
+    }
+    
+    setIsLoading(false);
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("empleadoLogueado");
+    localStorage.removeItem("empleadoData");
+    setUserData(null);
+  };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Redirigiendo al panel de administración...</p>
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
+  }
+
+  if (userData) {
+    return <PanelEmpleado user={userData} onLogout={handleLogout} />;
   }
 
   return (

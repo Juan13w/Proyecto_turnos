@@ -153,21 +153,17 @@ export const useLoginForm = ({ isOpen, onClose, onLogin }: UseLoginFormProps) =>
         // Limpiar el formulario
         updateState({ email: '', password: '', tipoUsuario: '', error: '' });
         
-        // Guardar datos de sesión y redirigir
+        // Guardar datos de sesión
         const isAdmin = data.user.isAdmin;
         localStorage.setItem(isAdmin ? "adminLogueado" : "empleadoLogueado", "true");
         localStorage.setItem(isAdmin ? "adminData" : "empleadoData", JSON.stringify(data.user));
         
+        // Notificar el inicio de sesión exitoso
         onLogin(data.user);
         onClose();
         
-        // Redirigir a la ruta correspondiente
-        const targetPath = isAdmin ? '/admin' : '/empleado';
-        try {
-          router.replace(targetPath);
-        } catch (_) {
-          window.location.href = targetPath;
-        }
+        // Forzar recarga para asegurar que se aplique la autenticación
+        router.refresh();
       }
     } catch (error) {
       console.error("Error en el inicio de sesión:", error);
