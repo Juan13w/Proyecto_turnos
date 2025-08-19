@@ -21,7 +21,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ isOpen, onClose, onLogin, 
     handleEmailChange,
     handleEmailBlur,
     handlePasswordChange,
-    isFormValid
+    isFormValid,
+    location
   } = useLoginForm({ isOpen, onClose, onLogin });
 
   if (!isOpen) return null;
@@ -73,13 +74,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ isOpen, onClose, onLogin, 
             </div>
           </div>
 
-          {tipoUsuario && (
-            <div style={{marginBottom: 10, color: '#64748b', fontSize: 13}}>
-              <b>Tipo de usuario detectado:</b> {tipoUsuario}
+          {tipoUsuario === 'empleado' && location?.error && (
+            <div className="error-message" style={{ marginTop: '8px' }}>
+              {location.error}
             </div>
           )}
 
-          {tipoUsuario === "administrador" && (
+{tipoUsuario === "administrador" && (
             <div className="form-group admin-password-field fade-in">
               <label htmlFor="password">Contraseña</label>
               <div className="input-with-icon">
