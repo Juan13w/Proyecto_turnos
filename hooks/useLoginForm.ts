@@ -15,6 +15,7 @@ interface LoginFormState {
   location: {
     latitude: number | null;
     longitude: number | null;
+    accuracy?: number | null;
     error: string | null;
   };
   localIP: string;
@@ -35,7 +36,7 @@ export const useLoginForm = ({ isOpen, onClose, onLogin }: UseLoginFormProps) =>
     error: '',
     tipoUsuario: '',
     deviceInfo: { dispositivo: 'Computador', userAgent: '', platform: '' },
-    location: { latitude: null, longitude: null, error: null },
+    location: { latitude: null, longitude: null, accuracy: null, error: null },
     localIP: '',
   });
 
@@ -46,58 +47,62 @@ export const useLoginForm = ({ isOpen, onClose, onLogin }: UseLoginFormProps) =>
     setState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Función para obtener la ubicación del usuario
+  // Función para obtener la ubicación del usuario con la máxima precisión posible
   const getGeolocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      updateState({
-        location: { 
-          latitude: null, 
-          longitude: null, 
-          error: 'Geolocalización no soportada por el navegador' 
-        }
-      });
-      return;
-    }
+    if (!navigator.geolocation) return;
 
-    const options = {
-      enableHighAccuracy: true,  // Alta precisión
-      timeout: 10000,           // 10 segundos de espera
-      maximumAge: 0             // No usar caché
+    let bestPosition: GeolocationPosition | null = null;
+    let watchId: number | null = null;
+    const startTime = Date.now();
+    const MAX_WAIT_TIME = 30000; // 30 segundos máximo de espera
+
+    const options: PositionOptions = {
+      enableHighAccuracy: true,     // Usar GPS si está disponible
+      timeout: 60000,              // 60 segundos de timeout
+      maximumAge: 0                // No usar caché
     };
 
-    navigator.geolocation.getCurrentPosition(
+    const cleanup = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+
+    // Usamos watchPosition para obtener múltiples lecturas
+    watchId = navigator.geolocation.watchPosition(
       (position) => {
-        updateState({
-          location: {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            error: null
+        // Si es la primera lectura o es más precisa que la anterior
+        if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+          bestPosition = position;
+          
+          // Actualizamos el estado con la mejor posición encontrada
+          updateState({
+            location: {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              error: null
+            }
+          });
+
+          // Si la precisión es muy buena (menos de 20 metros), terminamos
+          if (position.coords.accuracy <= 20) {
+            cleanup();
           }
-        });
-      },
-      (error: GeolocationPositionError) => {
-        let errorMessage = 'Error al obtener la ubicación';
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Permiso de ubicación denegado. Por favor, habilita la geolocalización para continuar.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'La información de ubicación no está disponible.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Se agotó el tiempo de espera para obtener la ubicación.';
-            break;
         }
-        updateState({
-          location: { 
-            latitude: null, 
-            longitude: null, 
-            error: errorMessage 
-          }
-        });
+
+        // Si ha pasado el tiempo máximo de espera, terminamos
+        if (Date.now() - startTime > MAX_WAIT_TIME) {
+          cleanup();
+        }
       },
+      // Callback de error silencioso
+      () => cleanup(),
       options
     );
+
+    // Limpieza en caso de que el componente se desmonte
+    return cleanup;
   }, [updateState]);
 
   // Solicitar permiso de ubicación cuando el componente se monte
