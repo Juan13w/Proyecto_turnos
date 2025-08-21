@@ -47,6 +47,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Empleado no encontrado" }, { status: 401 })
     }
 
+    // Obtener la fecha de ayer
+    const fechaAyer = new Date();
+    fechaAyer.setDate(fechaAyer.getDate() - 1);
+    const fechaAyerStr = fechaAyer.toISOString().split('T')[0];
+    
+    // Limpiar registros del día anterior para este empleado
+    try {
+      await sql`
+        DELETE FROM historial_turnos 
+        WHERE empleado_email = ${email} 
+        AND fecha = ${fechaAyerStr}
+      `;
+      console.log(`Registros del día ${fechaAyerStr} eliminados para el empleado ${email}`);
+    } catch (error) {
+      console.error('Error al limpiar registros antiguos:', error);
+      // Continuamos con el login aunque falle la limpieza
+    }
+
     // Obtener información del dispositivo del frontend o del User-Agent
     const userAgent = request.headers.get('user-agent') || 'Desconocido';
     const serverIP = getClientIP(request);

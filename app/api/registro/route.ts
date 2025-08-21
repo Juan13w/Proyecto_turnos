@@ -12,16 +12,16 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const hora = now.toTimeString().split(" ")[0];
 
-    // Mapeo de tipos a columnas de la tabla turnos
+    // Mapeo de tipos a columnas de la tabla historial_turnos
     const tipoToColumna: Record<string, string> = {
-      "entrada": "Hora_Entrada",
-      "break1_salida": "Hora_Salida_break",
-      "break1_entrada": "Hora_Entrada_break",
-      "almuerzo_salida": "Hora_Salida_almuerzo",
-      "almuerzo_entrada": "Hora_Entrada_almuerzo",
-      "break2_salida": "Hora_Salida_break2",
-      "break2_entrada": "Hora_Entrada_break2",
-      "salida": "Hora_Salida"
+      "entrada": "hora_entrada",
+      "break1_salida": "break1_salida",
+      "break1_entrada": "break1_entrada",
+      "almuerzo_salida": "almuerzo_salida",
+      "almuerzo_entrada": "almuerzo_entrada",
+      "break2_salida": "break2_salida",
+      "break2_entrada": "break2_entrada",
+      "salida": "hora_salida"
     };
 
     const columna = tipoToColumna[tipo];
@@ -29,45 +29,111 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Tipo de registro no válido: ${tipo}` }, { status: 400 });
     }
 
-    // Actualizar la columna correspondiente en la fila del turno (forma segura)
-        const query = `UPDATE turno SET ${columna} = ? WHERE Turno_id = ?`;
-    await pool.execute(query, [hora, turnoId]);
+    // Obtener el email del empleado asociado a este turno
+    const turnoIdNum = Number(turnoId);
+    console.log('Buscando empleado con Turno_id:', turnoIdNum);
+    
+    // Buscamos el empleado en la tabla 'empleado' (singular)
+    const [empleados] = await pool.execute<any[]>(
+      'SELECT Correo_emp as email FROM empleado WHERE empleado_id = ?',
+      [turnoIdNum]
+    );
+    
+    console.log('Resultado de la consulta de empleado:', empleados);
 
+    if (!empleados || empleados.length === 0) {
+      return NextResponse.json({ error: "No se encontró el empleado asociado a este turno" }, { status: 404 });
+    }
+
+    const empleadoEmail = empleados[0]?.email;
+    if (!empleadoEmail) {
+      console.error('No se pudo obtener el email del empleado');
+      return NextResponse.json({ error: "No se pudo obtener la información del empleado" }, { status: 404 });
+    }
+    const fechaActual = new Date().toISOString().split('T')[0];
+
+    // Primero verificamos si ya existe un registro para este empleado hoy
+    const [existingRecords] = await pool.execute<any[]>(
+      'SELECT * FROM historial_turnos WHERE empleado_email = ? AND fecha = ?',
+      [empleadoEmail, fechaActual]
+    );
+
+    if (existingRecords && existingRecords.length > 0) {
+      // Si existe, actualizamos solo la columna correspondiente
+      const updateQuery = `
+        UPDATE historial_turnos 
+        SET ${columna} = ? 
+        WHERE empleado_email = ? AND fecha = ?
+      `;
+      
+      console.log('Actualizando registro existente:', { empleadoEmail, fechaActual, columna, hora });
+      await pool.execute(updateQuery, [hora, empleadoEmail, fechaActual]);
+    } else {
+      // Si no existe, creamos un nuevo registro con la hora actual
+      const insertQuery = `
+        INSERT INTO historial_turnos (empleado_email, fecha, ${columna})
+        VALUES (?, ?, ?)
+      `;
+      
+      console.log('Creando nuevo registro:', { empleadoEmail, fechaActual, columna, hora });
+      await pool.execute(insertQuery, [empleadoEmail, fechaActual, hora]);
+    }
+    
     return NextResponse.json({
       success: true,
+      message: 'Registro guardado exitosamente',
       columna,
       hora,
     });
-  } catch (error) {
-    console.error("Error registrando horario:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("Error general:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Detalles del error:', { errorMessage, stack: error instanceof Error ? error.stack : 'No hay stack trace' });
+    return NextResponse.json({ 
+      error: "Error interno del servidor",
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+    }, { status: 500 });
   }
 }
 
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const empleadoId = searchParams.get("empleadoId")
+    const { searchParams } = new URL(request.url);
+    const empleadoId = searchParams.get("empleadoId");
+    const fechaActual = new Date().toISOString().split('T')[0];
 
     if (!empleadoId) {
-      return NextResponse.json({ error: "Empleado ID es requerido" }, { status: 400 })
+      return NextResponse.json({ error: "Empleado ID es requerido" }, { status: 400 });
     }
 
-    // Consultar registros usando nombres exactos de columnas
-    const registros = await sql`
-      SELECT * FROM registro_horario
-      WHERE Empleado_id = ${empleadoId}
-      ORDER BY Fecha DESC, Hora DESC
-      LIMIT 50
-    `
+    // Obtener el email del empleado desde la tabla empleado
+    const [empleados] = await pool.execute<any[]>(
+      'SELECT Correo_emp as email FROM empleado WHERE empleado_id = ?',
+      [empleadoId]
+    );
 
-    return NextResponse.json({
+    if (!empleados || empleados.length === 0) {
+      return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
+    }
+
+    const empleadoEmail = empleados[0].email;
+
+    // Consultar registros del empleado para la fecha actual
+    const [registros] = await pool.execute<any[]>(
+      `SELECT * FROM historial_turnos 
+       WHERE empleado_email = ? AND fecha = ?
+       ORDER BY id DESC
+       LIMIT 1`,
+      [empleadoEmail, fechaActual]
+    );
+
+    return NextResponse.json({ 
       success: true,
-      registros: registros,
-    })
+      registros: registros || []
+    });
   } catch (error) {
-    console.error("Error obteniendo registros:", error)
+    console.error("Error obteniendo registros:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

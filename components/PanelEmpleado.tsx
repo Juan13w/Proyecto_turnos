@@ -25,6 +25,34 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
 
   
 
+  // Función para cargar los registros existentes
+  const cargarRegistros = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await fetch(`/api/registro?empleadoId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.registros && data.registros.length > 0) {
+          // Tomamos el último registro (el más reciente)
+          const ultimoRegistro = data.registros[0];
+          setRegistro({
+            entrada: ultimoRegistro.hora_entrada || "",
+            break1Salida: ultimoRegistro.break1_salida || "",
+            break1Entrada: ultimoRegistro.break1_entrada || "",
+            almuerzoSalida: ultimoRegistro.almuerzo_salida || "",
+            almuerzoEntrada: ultimoRegistro.almuerzo_entrada || "",
+            break2Salida: ultimoRegistro.break2_salida || "",
+            break2Entrada: ultimoRegistro.break2_entrada || "",
+            salida: ultimoRegistro.hora_salida || ""
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar registros:', error);
+    }
+  };
+
   useEffect(() => {
     const actualizarHora = () => {
       const ahora = new Date();
@@ -45,10 +73,16 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
         }).toUpperCase()
       );
     };
+
+    // Inicializar hora y fecha
     actualizarHora();
     const timer = setInterval(actualizarHora, 1000);
+    
+    // Cargar registros existentes
+    cargarRegistros();
+    
     return () => clearInterval(timer);
-  }, []);
+  }, [user?.id]);
 
   const [registro, setRegistro] = useState({
     entrada: "",
@@ -61,39 +95,15 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
     salida: "",
   });
 
-  const guardarRegistroCompleto = async (datosRegistro = registro) => {
-    try {
-      const response = await fetch("/api/registro/historial", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          empleado_email: user.email,
-          fecha: new Date().toLocaleDateString('es-ES'),
-          hora_entrada: datosRegistro.entrada || null,
-          hora_salida: datosRegistro.salida || null,
-          break1_salida: datosRegistro.break1Salida || null,
-          break1_entrada: datosRegistro.break1Entrada || null,
-          almuerzo_salida: datosRegistro.almuerzoSalida || null,
-          almuerzo_entrada: datosRegistro.almuerzoEntrada || null,
-          break2_salida: datosRegistro.break2Salida || null,
-          break2_entrada: datosRegistro.break2Entrada || null,
-        })
-      });
-      
-      if (response.ok) {
-        setMensaje("Registro guardado exitosamente");
-        setShowCompletado(true);
-        return true;
-      } else { 
-        const errorData = await response.json();
-        setMensaje(errorData.error || "Error al guardar el registro");
-        return false;
-      }
-    } catch (error) {
-      console.error("Error al guardar el registro:", error);
-      setMensaje("Error de conexión al guardar el registro");
-      return false;
+  const guardarRegistroCompleto = async (esSalida = false) => {
+    // Esta función ahora solo maneja el cierre de sesión cuando es necesario
+    // ya que cada registro se guarda individualmente en la API
+    if (esSalida) {
+      // Si es una salida, mostramos el mensaje de despedida
+      setMensaje("Jornada laboral finalizada. ¡Hasta pronto!");
+      setShowCompletado(true);
     }
+    return true;
   };
 
   const validarOrdenRegistro = (campo: keyof typeof registro): { valido: boolean; mensaje?: string } => {
@@ -185,20 +195,25 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
       
       const data = await res.json();
       if (data.success) {
-        setMensaje(`Hora registrada correctamente para ${tipo.replace('_', ' ')}.`);
+        // Actualizamos el estado local
+        setRegistro(nuevoRegistro);
         
-        // Si es la hora de salida, guardamos automáticamente el registro completo
-        if (campo === 'salida') {
-          // Usamos el estado actualizado para guardar el registro completo
-          const guardado = await guardarRegistroCompleto(nuevoRegistro);
-          if (guardado) {
-            setMensaje("Hora de salida registrada y guardada correctamente.");
-          }
+        // Mostramos el mensaje de confirmación
+        const esSalida = tipo === 'salida';
+        setMensaje(`Hora de ${tipo.replace('_', ' ')} registrada correctamente.`);
+        
+        // Si es una salida, mostramos el mensaje de despedida
+        if (esSalida) {
+          await guardarRegistroCompleto(true);
         }
       } else {
-        // Si hay un error, revertimos el cambio en el estado local
-        setRegistro(prev => ({ ...prev, [campo]: "" }));
+        // Si hay un error, mostramos el mensaje de error
         setMensaje(data.error || "Error al registrar hora");
+        
+        // Solo revertimos el cambio en el estado local si el error no es de validación
+        if (!data.error?.includes('Ya existe un registro') && !data.error?.includes('tiene un valor')) {
+          setRegistro(prev => ({ ...prev, [campo]: "" }));
+        }
       }
     } catch (error) {
       // Si hay un error, revertimos el cambio en el estado local
@@ -250,7 +265,22 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
             <div className="modal-jornada-completada">
               <div className="modal-jornada-content">
                 <h2>Jornada laboral completada</h2>
-                <button className="cerrar-sesion-btn" onClick={() => onLogout && onLogout()}>
+                <button className="cerrar-sesion-btn" onClick={() => {
+                  // Reset registration state before logging out
+                  setRegistro({
+                    entrada: "",
+                    break1Salida: "",
+                    break1Entrada: "",
+                    almuerzoSalida: "",
+                    almuerzoEntrada: "",
+                    break2Salida: "",
+                    break2Entrada: "",
+                    salida: ""
+                  });
+                  setMensaje("");
+                  setShowCompletado(false);
+                  if (onLogout) onLogout();
+                }}>
                   Cerrar sesión
                 </button>
               </div>
@@ -262,6 +292,30 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
             <h2>Panel de Empleado</h2>
             <div className="panel-empleado-user">👤 {user?.email}</div>
           </div>
+          <button 
+            onClick={() => {
+              // Limpiar el estado local
+              setRegistro({
+                entrada: "",
+                break1Salida: "",
+                break1Entrada: "",
+                almuerzoSalida: "",
+                almuerzoEntrada: "",
+                break2Salida: "",
+                break2Entrada: "",
+                salida: ""
+              });
+              setMensaje("");
+              setShowCompletado(false);
+              
+              // Cerrar sesión
+              if (onLogout) onLogout();
+            }}
+            className="logout-button"
+            title="Cerrar sesión"
+          >
+            Cerrar sesión
+          </button>
           <div className="panel-empleado-fecha-hora">
             <div className="panel-empleado-hora">{horaActual}</div>
             <div className="panel-empleado-fecha">{fechaActual}</div>
@@ -377,6 +431,7 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
   );
 };
 
+// Interfaz para el componente RegistroCard
 interface RegistroCardProps {
   emoji: string;
   label: string;
@@ -398,19 +453,19 @@ const RegistroCard: React.FC<RegistroCardProps> = ({
   isDisabled = false,
   disabledReason = ''
 }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  
-  const handleClick = () => {
-    if (!isDisabled) {
-      onRegister();
-    }
-  };
+    const [showTooltip, setShowTooltip] = useState(false);
+    
+    const handleClick = () => {
+      if (!isDisabled) {
+        onRegister();
+      }
+    };
 
-  return (
-    <div 
-      className={`registro-card card-${type} ${isDisabled ? 'disabled' : ''}`}
-      onMouseEnter={() => isDisabled && setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+    return (
+      <div 
+        className={`registro-card card-${type} ${isDisabled ? 'disabled' : ''}`}
+        onMouseEnter={() => isDisabled && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
     >
       <span className="registro-label">
         <span className={`registro-emoji emoji-${type}`}>
