@@ -258,22 +258,31 @@ export const useLoginForm = ({ isOpen, onClose, onLogin }: UseLoginFormProps) =>
     updateState({ loading: true, error: '' });
 
     try {
+      // Preparar los datos del dispositivo
+      const deviceInfoData = {
+        ip: state.localIP || 'unknown',
+        dispositivo: state.deviceInfo.dispositivo,
+        userAgent: state.deviceInfo.userAgent,
+        platform: state.deviceInfo.platform,
+        location: state.location.latitude && state.location.longitude
+          ? `${state.location.latitude},${state.location.longitude}`
+          : 'ubicacion_desconocida',
+        accuracy: state.location.accuracy || null,
+        source: state.location.latitude ? 'browser' : 'ip'
+      };
+
+      console.log('Enviando datos de login:', {
+        email: state.email,
+        deviceInfo: deviceInfoData,
+        hasPassword: state.tipoUsuario === "administrador" ? '***' : 'none'
+      });
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: state.email,
-          deviceInfo: {
-            ip: state.localIP || 'unknown',
-            dispositivo: state.deviceInfo.dispositivo,
-            userAgent: state.deviceInfo.userAgent,
-            platform: state.deviceInfo.platform,
-            location: state.location.latitude && state.location.longitude
-              ? `${state.location.latitude},${state.location.longitude}`
-              : 'ubicacion_desconocida',
-            accuracy: null,
-            source: state.location.latitude ? 'browser' : 'ip'
-          },
+          deviceInfo: deviceInfoData,
           ...(state.tipoUsuario === "administrador" && { password: state.password })
         })
       });
