@@ -86,15 +86,14 @@ const PanelEmpleado: React.FC<PanelEmpleadoProps> = ({ user, onLogout }) => {
       return { valido: false, mensaje: "No se permite registrar los domingos" }
     }
 
-    // Ajustar rango para break2_salida a 14:30-15:30
+    // Los rangos de horario han sido ajustados para pruebas
     const horarios = {
       entrada: { inicio: "06:00", fin: "08:30" },
       break1_salida: { inicio: "09:00", fin: "10:30" },
       break1_entrada: { inicio: "10:30", fin: "11:30" },
       almuerzo_salida: { inicio: "10:00", fin: "13:00" },
       almuerzo_entrada: { inicio: "13:00", fin: "14:30" },
-      break2_salida: { inicio: "14:30", fin: "15:30" }, // Actualizado para pruebas
-      break2_entrada: { inicio: "15:20", fin: "16:30" },
+      break2_salida: { inicio: "14:30", fin: "15:30" }, 
       salida: { inicio: "16:30", fin: "17:30" },
     }
 
